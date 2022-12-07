@@ -48,6 +48,7 @@ class PSOEnvironment(gym.Env):
     def __init__(self, resolution, ys, method, initial_seed, initial_position, sensor_vehicle, vehicles=4, exploration_distance=100,
                  exploitation_distance=200, reward_function='mse', behavioral_method=0, type_error='all_map',
                  stage='exploration', final_model='samples'):
+        self.list_S_sf = []
         self.p_vehicles = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
         self.P = nx.MultiGraph()
         self.sub_fleets = None
@@ -249,31 +250,35 @@ class PSOEnvironment(gym.Env):
                             self.P.add_edge(node_p[0], node_q[0], S_pq=intersection)
         self.sub_fleets = list(nx.connected_components(self.P))
         for i, sub_fleet in enumerate(self.sub_fleets):
-            self.S_sf = set()
+            S_sf = set()
             for particle in sub_fleet:
-                self.S_sf = self.S_sf | self.P.nodes[particle]['S_p']
-            print(f'Subfleet {i} contains {self.S_sf} y se usa en eqs. 13c y 13d')
+                S_sf = S_sf | self.P.nodes[particle]['S_p']
+            print(f'Subfleet {i} contains {S_sf} y se usa en eqs. 13c y 13d')
+            self.list_S_sf.append(S_sf)
 
             for particle in sub_fleet:
                 print(f'Particle {particle} contains {self.P.nodes[particle]["S_p"]} y se usa en eqs. 13a y 13b')
 
     def gp_update(self):
         for i, sub_fleet in enumerate(self.sub_fleets):
-            sensor_sf = self.S_sf[i]
-            for j, sensor in enumerate(sensor_sf):
-                for k, sensor_p in self.P.nodes[sub_fleet]['S_p']:
-                    if sensor == sensor_p:
+            sensor_sf = self.list_S_sf[i]
+            for s, sensor in enumerate(sensor_sf):
+                measures = []
+                coordinates = []
+                for p, particle in enumerate(sub_fleet):
+                    part_sensor = self.P.nodes[particle]['S_p']
 
 
-    def take_measures(self):
+
+    #def take_measures(self):
         ## take water quality measures
 
-    def updateParticle_n(self, c1, c2, c3, c4, part):
+    def updateParticle_n(self, p, c1, c2, c3, c4, part):
 
         """
         Calculates the speed and the position of the particles (drones).
         """
-
+        list_part = nx.get_node_attributes(self.P, 'U_p')[p]
         if self.behavioral_method == 0:
             u1 = np.array([random.uniform(0, c1) for _ in range(len(part))])
             u2 = np.array([random.uniform(0, c2) for _ in range(len(part))])
@@ -297,7 +302,7 @@ class PSOEnvironment(gym.Env):
             elif abs(speed) > part.smax:
                 part.speed[i] = math.copysign(part.smax, speed)
         part[:] = part + part.speed
-
+        self.P[p]['U_p'] = list_part
 
         return part
 
@@ -389,6 +394,7 @@ class PSOEnvironment(gym.Env):
 
     def reset_variables(self):
         self.f = None
+        self.list_S_sf = []
         self.k = None
         self.repeat = False
         self.x_h = []
