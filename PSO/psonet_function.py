@@ -1,32 +1,25 @@
+import copy
+import math
+import os
+import sys
+
+import gym
+import networkx as nx
 import openpyxl
-
-from Data.limits import Limits
-from Environment.map import Map
-# from Benchmark.benchmark_functions import Benchmark_function
-from Benchmark.bench_functions import *
-from Environment.bounds import Bounds
-from Data.utils import Utils
-from Environment.contamination_areas import DetectContaminationAreas
-from Environment.plot import Plots
-
+from deap import base
+from deap import creator
+from deap import tools
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
 from sklearn.metrics import mean_squared_error
 
-import numpy as np
-import random
-import math
-import gym
-import copy
-import networkx as nx
-
-from deap import base
-from deap import creator
-from deap import tools
-from deap.benchmarks import movingpeaks, shekel
-
-
-import sys, os
+# from Benchmark.benchmark_functions import Benchmark_function
+from Benchmark.bench_functions import *
+from Data.limits import Limits
+from Data.utils import Utils
+from Environment.bounds import Bounds
+from Environment.contamination_areas import DetectContaminationAreas
+from Environment.plot import Plots
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
@@ -45,7 +38,8 @@ def createPart():
 
 class PSOEnvironment(gym.Env):
 
-    def __init__(self, resolution, ys, method, initial_seed, initial_position, sensor_vehicle, vehicles=4, exploration_distance=100,
+    def __init__(self, resolution, ys, method, initial_seed, initial_position, sensor_vehicle, vehicles=4,
+                 exploration_distance=100,
                  exploitation_distance=200, reward_function='mse', behavioral_method=0, type_error='all_map',
                  stage='exploration', final_model='samples'):
         self.list_S_sf = []
@@ -104,7 +98,7 @@ class PSOEnvironment(gym.Env):
         self.ys = ys
         self.max_peaks_bench = list()
         self.max_peaks_mu = list()
-        ker = RBF(length_scale=10, length_scale_bounds=(1e-1, 10^5))
+        ker = RBF(length_scale=10, length_scale_bounds=(1e-1, 10 ^ 5))
         self.gpr = GaussianProcessRegressor(kernel=ker, alpha=1e-6)  # optimizer=None)
         self.x_h = []
         self.y_h = []
@@ -188,13 +182,15 @@ class PSOEnvironment(gym.Env):
         self.p = 1
         self.max_peaks = None
 
-        self.df_bounds, self.X_test, self.bench_limits = Bounds(self.resolution, self.xs, self.ys, load_file=False).map_bound()
+        self.df_bounds, self.X_test, self.bench_limits = Bounds(self.resolution, self.xs, self.ys,
+                                                                load_file=False).map_bound()
         self.secure, self.df_bounds = Bounds(self.resolution, self.xs, self.ys).interest_area()
 
         self.X_test_y = self.X_test[1]
         self.bench_function = None
 
-        self.plot = Plots(self.xs, self.ys, self.X_test, self.secure, self.bench_function, self.grid_min, self.grid_or, self.stage)
+        self.plot = Plots(self.xs, self.ys, self.X_test, self.secure, self.bench_function, self.grid_min, self.grid_or,
+                          self.stage)
 
         self.util = Utils(self.vehicles)
 
@@ -229,7 +225,10 @@ class PSOEnvironment(gym.Env):
         part.speed = np.array([random.uniform(self.smin, self.smax) for _ in range(self.size)])
         part.smin = self.smin
         part.smax = self.smax
-        part.node = self.P.add_node(self.p_vehicles[self.p], S_p=self.sensor_vehicle[self.p], U_p=list_part)
+        self.P.add_node(self.p_vehicles[self.p], S_p=dict.fromkeys(self.sensor_vehicle[self.p], []),
+                                    U_p=list_part)
+        # part.node = add_node retorna un void, aqui solo deberia guardarse el nombre del nodo
+        # part.node =
 
         self.p += 1
 
@@ -244,7 +243,7 @@ class PSOEnvironment(gym.Env):
                 j += 1
                 if i <= j:
                     print(node_q[1]["S_p"])
-                    intersection = node_p[1]["S_p"] & node_q[1]["S_p"]
+                    intersection = node_p[1]["S_p"].keys() & node_q[1]["S_p"].keys()
                     if node_q != node_p and len(intersection) > 0:
                         if not self.P.has_edge(node_p[0], node_q[0]):
                             self.P.add_edge(node_p[0], node_q[0], S_pq=intersection)
@@ -252,7 +251,7 @@ class PSOEnvironment(gym.Env):
         for i, sub_fleet in enumerate(self.sub_fleets):
             S_sf = set()
             for particle in sub_fleet:
-                S_sf = S_sf | self.P.nodes[particle]['S_p']
+                S_sf = S_sf | self.P.nodes[particle]['S_p'].keys()
             print(f'Subfleet {i} contains {S_sf} y se usa en eqs. 13c y 13d')
             self.list_S_sf.append(S_sf)
 
@@ -260,18 +259,34 @@ class PSOEnvironment(gym.Env):
                 print(f'Particle {particle} contains {self.P.nodes[particle]["S_p"]} y se usa en eqs. 13a y 13b')
 
     def gp_update(self):
+        # S_n = {"sensor1": {"mu": [], "sigma": []}}
+        measuring_positions = nx.get_node_attributes(self.P, "Q_p")
         for i, sub_fleet in enumerate(self.sub_fleets):
-            sensor_sf = self.list_S_sf[i]
-            for s, sensor in enumerate(sensor_sf):
-                measures = []
-                coordinates = []
+            for s, sensor in enumerate(self.list_S_sf[i]):
+                measures_for_sensor = []
+                coordinates_for_sensor = []
                 for p, particle in enumerate(sub_fleet):
-                    part_sensor = self.P.nodes[particle]['S_p']
+                    s_p = self.P.nodes(data=True)[particle]['S_p']
+                    if sensor in s_p:
+                        measures_for_sensor.extend(s_p[sensor])
+                        coordinates_for_sensor.append(measuring_positions[particle])
+                print(s, sensor)
+                print(coordinates_for_sensor)
+                print(measures_for_sensor)
+                # GP.fit(coordinates_for_sensor, measures_for_sensor)
+                # S_n[sensor][mu], S_n[sensor][sigma] = GP.predict(X_Mapa, return_std=true)
 
+        # for i, sub_fleet in enumerate(self.sub_fleets):
+        #     sensor_sf = self.list_S_sf[i]
+        #     for s, sensor in enumerate(sensor_sf):
+        #         measures = []
+        #         coordinates = []
+        #         for p, particle in enumerate(sub_fleet):
+        #             part_sensor = self.P.nodes[particle]['S_p']
 
-
-    #def take_measures(self):
-        ## take water quality measures
+    # def take_measures(self):
+    ## take water quality measures
+    ## aqui deberiamos actualizar Q_p
 
     def updateParticle_n(self, p, c1, c2, c3, c4, part):
 
@@ -317,7 +332,6 @@ class PSOEnvironment(gym.Env):
         self.toolbox.register("update", self.updateParticle_n)
         # self.toolbox.register("evaluate", shekel)
 
-
         return self.toolbox
 
     def swarm(self):
@@ -359,8 +373,11 @@ class PSOEnvironment(gym.Env):
         #                                                                                             self.xs, self.ys,
         #                                                                                             self.X_test,
         #                                                                                             self.seed, self.vehicles).create_new_map()
-        self.bench_function, self.bench_array, self.num_of_peaks, self.index_a = Benchmark_function(self.grid_or, 1, self.xs, self.ys, None, self.seed, 0,
-                                                                 base_benchmark="ackley", randomize_shekel=True).create_new_map()
+        self.bench_function, self.bench_array, self.num_of_peaks, self.index_a = Benchmark_function(self.grid_or, 1,
+                                                                                                    self.xs, self.ys,
+                                                                                                    None, self.seed, 0,
+                                                                                                    base_benchmark="ackley",
+                                                                                                    randomize_shekel=True).create_new_map()
 
         self.max_contamination()
         self.generatePart()
@@ -368,7 +385,7 @@ class PSOEnvironment(gym.Env):
         random.seed(self.seed)
         self.swarm()
         self.statistic()
-        #self.peaks_bench()
+        # self.peaks_bench()
         self.detect_areas = DetectContaminationAreas(self.X_test, self.bench_array, vehicles=self.vehicles,
                                                      area=self.xs)
         self.centers_bench, self.dict_index_bench, self.dict_bench, self.dict_coord_bench, self.center_peaks_bench, \
@@ -785,24 +802,24 @@ class PSOEnvironment(gym.Env):
             if dfirts and self.stage != 'no_exploitation':
                 for i in range(len(self.index_center_bench)):
                     max_az = self.final_mu[self.index_center_bench[i]]
-                #for i in range(len(self.center_peaks_bench)):
-                 #   coord = self.center_peaks_bench[i]
-                  #  for j in range(len(self.X_test)):
-                   #     coord_xtest = self.X_test[j]
+                    # for i in range(len(self.center_peaks_bench)):
+                    #   coord = self.center_peaks_bench[i]
+                    #  for j in range(len(self.X_test)):
+                    #     coord_xtest = self.X_test[j]
                     #    if coord[0] == coord_xtest[0] and coord[1] == coord_xtest[1]:
-                     #       max_az = self.mu[j]
-                      #      break
+                    #       max_az = self.mu[j]
+                    #      break
                     self.dict_error_peak_explore["action_zone%s" % i] = abs(self.max_bench_list[i] - max_az)
             elif self.stage == 'no_exploitation':
                 for i in range(len(self.index_center_bench)):
                     max_az = self.mu[self.index_center_bench[i]]
-                #for i in range(len(self.center_peaks_bench)):
-                 #   coord = self.center_peaks_bench[i]
-                  #  for j in range(len(self.X_test)):
-                   #     coord_xtest = self.X_test[j]
+                    # for i in range(len(self.center_peaks_bench)):
+                    #   coord = self.center_peaks_bench[i]
+                    #  for j in range(len(self.X_test)):
+                    #     coord_xtest = self.X_test[j]
                     #    if coord[0] == coord_xtest[0] and coord[1] == coord_xtest[1]:
-                     #       max_az = self.mu[j]
-                      #      break
+                    #       max_az = self.mu[j]
+                    #      break
                     self.dict_error_peak["action_zone%s" % i] = abs(self.max_bench_list[i] - max_az)
             else:
                 if self.final_model == 'centralized':
@@ -812,13 +829,13 @@ class PSOEnvironment(gym.Env):
                     self.replace_action_zones()
                 for i in range(len(self.index_center_bench)):
                     max_az = self.final_mu[self.index_center_bench[i]]
-                #for i in range(len(self.center_peaks_bench)):
-                 #   coord = self.center_peaks_bench[i]
-                  #  for j in range(len(self.X_test)):
-                   #     coord_xtest = self.X_test[j]
+                    # for i in range(len(self.center_peaks_bench)):
+                    #   coord = self.center_peaks_bench[i]
+                    #  for j in range(len(self.X_test)):
+                    #     coord_xtest = self.X_test[j]
                     #    if coord[0] == coord_xtest[0] and coord[1] == coord_xtest[1]:
-                     #       max_az = self.final_mu[j]
-                      #      break
+                    #       max_az = self.final_mu[j]
+                    #      break
                     self.dict_error_peak["action_zone%s" % i] = abs(self.max_bench_list[i] - max_az)
         elif self.type_error == 'contamination_1':
             index_mu_max = [i for i in range(len(self.X_test)) if (self.X_test[i] == self.coordinate_bench_max).all()]
@@ -989,12 +1006,11 @@ class PSOEnvironment(gym.Env):
                     if self.n_data > self.vehicles - 1:
                         self.n_data = 0
 
-
                 self.it.append(self.g)
                 self.error = self.calculate_error()
                 self.error_data.append(self.error)
 
-                #self.save_data()
+                # self.save_data()
 
                 self.sigma_best, self.mu_best = self.sigma_max()
 
@@ -1019,21 +1035,23 @@ class PSOEnvironment(gym.Env):
                 done = True
             else:
                 done = False
-                #if max(self.mu) < 0.33:
-                    #done = True
-                 #   self.exploration_distance = self.exploration_distance + self.exploration_distance_initial
-                  #  self.exploitation_distance = self.exploitation_distance_initial - self.exploration_distance_initial
-                #else:
-                    #self.plot.movement_exploration(self.mu, self.sigma, self.part_ant_explore)
+                # if max(self.mu) < 0.33:
+                # done = True
+                #   self.exploration_distance = self.exploration_distance + self.exploration_distance_initial
+                #  self.exploitation_distance = self.exploitation_distance_initial - self.exploration_distance_initial
+                # else:
+                # self.plot.movement_exploration(self.mu, self.sigma, self.part_ant_explore)
                 self.dict_, self.dict_coord_, self.dict_impo_, self.centers, self.coord_centers, self.dict_index, \
                 self.action_zone, self.dict_limits = self.detect_areas.areas_levels(self.mu)
                 self.part_ant_explore = copy.copy(self.part_ant)
                 self.allocate_vehicles()
                 self.obtain_global()
                 for part in self.pop:
-                    self.part_ant_exploit, self.distances_exploit = self.util.distance_part(self.g_exploit, self.n_data, part,
+                    self.part_ant_exploit, self.distances_exploit = self.util.distance_part(self.g_exploit, self.n_data,
+                                                                                            part,
                                                                                             self.part_ant_exploit,
-                                                                                            self.distances_exploit, self.array_part,
+                                                                                            self.distances_exploit,
+                                                                                            self.array_part,
                                                                                             dfirst=True)
                     self.n_data += 1
                     if self.n_data > self.vehicles - 1:
@@ -1116,9 +1134,11 @@ class PSOEnvironment(gym.Env):
                 self.part_ant, self.distances = self.util.distance_part(self.g, self.n_data, part, self.part_ant,
                                                                         self.distances, self.array_part, dfirst=False)
 
-                self.part_ant_exploit, self.distances_exploit = self.util.distance_part(self.g_exploit, self.n_data, part,
+                self.part_ant_exploit, self.distances_exploit = self.util.distance_part(self.g_exploit, self.n_data,
+                                                                                        part,
                                                                                         self.part_ant_exploit,
-                                                                                        self.distances_exploit, self.array_part,
+                                                                                        self.distances_exploit,
+                                                                                        self.array_part,
                                                                                         dfirst=False)
 
                 self.n_data += 1
@@ -1144,7 +1164,7 @@ class PSOEnvironment(gym.Env):
                 self.error = self.calculate_error(dfirts=False)
                 self.error_data.append(self.error)
 
-                #self.save_data()
+                # self.save_data()
 
             if self.len_scale >= 3 and self.print_warning:
                 print("Warning: reached the minimum value of length scale (Exploitation)")
@@ -1154,7 +1174,6 @@ class PSOEnvironment(gym.Env):
             dis_steps = np.mean(self.distances) - dist_ant
             if np.max(self.distances) == previous_dist:
                 break
-
 
             self.g += 1
             self.g_exploit += 1
@@ -1166,16 +1185,16 @@ class PSOEnvironment(gym.Env):
         self.logbook.record(gen=self.g, evals=len(self.pop), **self.stats.compile(self.pop))
 
         if (self.distances >= self.exploitation_distance).any() or np.max(self.distances) == self.dist_pre:
-           # while self.save < (self.exploitation_distance_initial / 25):
+            # while self.save < (self.exploitation_distance_initial / 25):
             #    error_list = copy.copy(self.dict_error_comparison["Distance%s" % self.save])
-             #   self.ERROR_data = self.calculate_error()
-              #  error_list.append(self.ERROR_data)
-               # self.dict_error_comparison["Distance%s" % self.save] = copy.copy(error_list)
-                #self.save += 1
+            #   self.ERROR_data = self.calculate_error()
+            #  error_list.append(self.ERROR_data)
+            # self.dict_error_comparison["Distance%s" % self.save] = copy.copy(error_list)
+            # self.save += 1
             done = True
-            #if np.max(self.distances) == self.dist_pre:
-             #   self.repeat = True
-              #  self.save_data()
+        # if np.max(self.distances) == self.dist_pre:
+        #   self.repeat = True
+        #  self.save_data()
         else:
             done = False
         return self.state, reward, done, {}
@@ -1268,7 +1287,7 @@ class PSOEnvironment(gym.Env):
             if np.max(self.distances) == previous_dist or self.fail:
                 break
 
-            #self.save_data()
+            # self.save_data()
             self.g += 1
 
         self.return_state()
@@ -1279,9 +1298,9 @@ class PSOEnvironment(gym.Env):
 
         if (self.distances >= self.exploitation_distance).any() or np.max(self.distances) == self.dist_pre:
             done = True
-            #if np.max(self.distances) == self.dist_pre:
-                #self.repeat = True
-                #self.save_data()
+            # if np.max(self.distances) == self.dist_pre:
+            # self.repeat = True
+            # self.save_data()
         else:
             done = False
         return self.state, reward, done, {}
@@ -1312,13 +1331,13 @@ class PSOEnvironment(gym.Env):
                 z += 1
                 self.state[z + 6] = part.best[0]
                 self.state[z + 7] = part.best[1]
-                #if self.n_data == self.vehicles - 1:
-                 #   self.state[16] = self.best[0]
-                  ##  self.state[17] = self.best[1]
-                    #self.state[18] = self.sigma_best[0]
-                    #self.state[19] = self.sigma_best[1]
-                    #self.state[20] = self.mu_best[0]
-                    #self.state[21] = self.mu_best[1]
+                # if self.n_data == self.vehicles - 1:
+                #   self.state[16] = self.best[0]
+                ##  self.state[17] = self.best[1]
+                # self.state[18] = self.sigma_best[0]
+                # self.state[19] = self.sigma_best[1]
+                # self.state[20] = self.mu_best[0]
+                # self.state[21] = self.mu_best[1]
             else:
                 posx = 2 * z
                 posy = (2 * z) + 1
@@ -1354,16 +1373,16 @@ class PSOEnvironment(gym.Env):
                     self.final_mu = copy.copy(self.mu)
                 elif self.final_model == 'federated':
                     self.replace_action_zones()
-            #self.plot.action_areas(self.dict_coord_, self.dict_impo_, self.centers)
-            #self.plot.action_areas(self.dict_coord_bench, self.dict_impo_bench, self.centers_bench)
+            # self.plot.action_areas(self.dict_coord_, self.dict_impo_, self.centers)
+            # self.plot.action_areas(self.dict_coord_bench, self.dict_impo_bench, self.centers_bench)
             self.type_error = 'action_zone'
             self.calculate_error()
             print("MSE az:", self.dict_error)
             # self.type_error = 'peaks'
             # self.calculate_error()
             # print("Error peak:", self.dict_error_peak)
-            #self.type_error = 'all_map'
-            #self.calculate_error()
+            # self.type_error = 'all_map'
+            # self.calculate_error()
         return self.state, reward, done, {}
 
     def final_gaussian(self):
@@ -1437,42 +1456,42 @@ class PSOEnvironment(gym.Env):
             hoja.append(self.dict_error_comparison["Distance%s" % i])
             wb.save('../Test/' + self.file + '/ALLCONError_' + str(self.save_dist[i]) + '.xlsx')
 
-        #wb2 = openpyxl.Workbook()
-        #hoja2 = wb2.active
-        #hoja2.append(self.error_comparison2)
-        #wb2.save('../Test/' + self.file + '/ALLCONError_50.xlsx')
+        # wb2 = openpyxl.Workbook()
+        # hoja2 = wb2.active
+        # hoja2.append(self.error_comparison2)
+        # wb2.save('../Test/' + self.file + '/ALLCONError_50.xlsx')
 
-        #wb3 = openpyxl.Workbook()
-        #hoja3 = wb3.active
-        #hoja3.append(self.error_comparison3)
-        #wb3.save('../Test/' + self.file + '/ALLCONError_75.xlsx')
+        # wb3 = openpyxl.Workbook()
+        # hoja3 = wb3.active
+        # hoja3.append(self.error_comparison3)
+        # wb3.save('../Test/' + self.file + '/ALLCONError_75.xlsx')
 
-        #wb4 = openpyxl.Workbook()
-        #hoja4 = wb4.active
-        #hoja4.append(self.error_comparison4)
-        #wb4.save('../Test/' + self.file + '/ALLCONError_100.xlsx')
+        # wb4 = openpyxl.Workbook()
+        # hoja4 = wb4.active
+        # hoja4.append(self.error_comparison4)
+        # wb4.save('../Test/' + self.file + '/ALLCONError_100.xlsx')
 
-        #wb5 = openpyxl.Workbook()
-        #hoja5 = wb5.active
-        #hoja5.append(self.error_comparison5)
-        #wb5.save('../Test/' + self.file + '/ALLCONError_125.xlsx')
+        # wb5 = openpyxl.Workbook()
+        # hoja5 = wb5.active
+        # hoja5.append(self.error_comparison5)
+        # wb5.save('../Test/' + self.file + '/ALLCONError_125.xlsx')
 
-        #wb6 = openpyxl.Workbook()
-        #hoja6 = wb6.active
-        #hoja6.append(self.error_comparison6)
-        #wb6.save('../Test/' + self.file + '/ALLCONError_150.xlsx')
+        # wb6 = openpyxl.Workbook()
+        # hoja6 = wb6.active
+        # hoja6.append(self.error_comparison6)
+        # wb6.save('../Test/' + self.file + '/ALLCONError_150.xlsx')
 
-        #wb7 = openpyxl.Workbook()
-        #hoja7 = wb7.active
-        #hoja7.append(self.error_comparison7)
-        #wb7.save('../Test/' + self.file + '/ALLCONErrorE_175.xlsx')
+        # wb7 = openpyxl.Workbook()
+        # hoja7 = wb7.active
+        # hoja7.append(self.error_comparison7)
+        # wb7.save('../Test/' + self.file + '/ALLCONErrorE_175.xlsx')
 
-        #wb8 = openpyxl.Workbook()
-        #hoja8 = wb8.active
-        #hoja8.append(self.error_comparison8)
-        #wb8.save('../Test/' + self.file + '/ALLCONErrorE_200.xlsx')
+        # wb8 = openpyxl.Workbook()
+        # hoja8 = wb8.active
+        # hoja8.append(self.error_comparison8)
+        # wb8.save('../Test/' + self.file + '/ALLCONErrorE_200.xlsx')
 
-        #wb9 = openpyxl.Workbook()
-        #hoja9 = wb9.active
-        #hoja9.append(self.error_comparison9)
-        #wb9.save('../Test/' + self.file + '/ALLCONErrorE_225.xlsx')
+        # wb9 = openpyxl.Workbook()
+        # hoja9 = wb9.active
+        # hoja9.append(self.error_comparison9)
+        # wb9.save('../Test/' + self.file + '/ALLCONErrorE_225.xlsx')
