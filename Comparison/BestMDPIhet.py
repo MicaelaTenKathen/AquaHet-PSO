@@ -61,11 +61,11 @@ initial_position = np.array([[8, 56],
                              [52, 10],
                              [91, 113],
                              [49, 51]])
-sensors = np.array([["s1"],
-                    ["s1", "s2"],
-                    ["s3", "s4"],
-                    ["s4"],
-                    ["s5"]])
+sensors = np.array([['s1'],
+                    ['s2', 's3'],
+                    ['s3', 's4'],
+                    ['s4'],
+                    ['s5']])
 start_time = time.time()
 
 # PSO initialization
@@ -73,7 +73,7 @@ vehicles = 4
 #stage = 'exploration'
 stage = 'no_exploitation'
 method = 0
-pso = PSOEnvironment(resolution, ys, method, method_pso='decoupled', initial_seed=1000001, initial_position=initial_position, sensor_vehicle=sensors, vehicles=vehicles,
+pso = PSOEnvironment(resolution, ys, method, method_pso='coupled', initial_seed=1000001, initial_position=initial_position, sensor_vehicle=sensors, vehicles=vehicles,
                      exploration_distance=200, exploitation_distance=200, reward_function='inc_mse',
                      type_error='all_map', stage=stage, final_model='federated')
 
