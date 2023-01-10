@@ -45,6 +45,7 @@ class PSOEnvironment(gym.Env):
                  stage='exploration', final_model='samples'):
         self.p_vehicles = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
         self.s_sensor = ['s1', 's2', 's3', 's4', 's5']
+        self.sensor_v = sensor_vehicle
         self.P = nx.MultiGraph()
         self.sub_fleets = None
         self.sensor_vehicle = None
@@ -162,13 +163,18 @@ class PSOEnvironment(gym.Env):
         self.population = copy.copy(self.vehicles)
         i = 0
         sensors = []
+        # while i < self.vehicles:
+        #     list_s = []
+        #     sensor = random.randint(1, 5)
+        #     index_s = random.sample(range(5), sensor)
+        #     for j in range(len(index_s)):
+        #         list_s.append(self.s_sensor[index_s[j]])
+        #     list_s = sorted(list_s)
+        #     sensors.append(list_s)
+        #     i += 1
         while i < self.vehicles:
-            list_s = []
-            sensor = random.randint(1, 5)
-            index_s = random.sample(range(5), sensor)
-            for j in range(len(index_s)):
-                list_s.append(self.s_sensor[index_s[j]])
-            list_s = sorted(list_s)
+            number = random.randint(0, 20)
+            list_s = sorted(self.sensor_v[number])
             sensors.append(list_s)
             i += 1
         self.sensor_vehicle = sensors
@@ -461,16 +467,14 @@ class PSOEnvironment(gym.Env):
 
     def w_values(self):
         cant_type = len(self.s_sf)
-        inver = 0
         for s in range(len(self.s_sf)):
+            inver = 0
             sensors = self.s_sf[s]
             for i, sensor in enumerate(sensors):
                 cant_sensor = self.dict_sensors_[sensor]['cant']
                 h = 1 / cant_sensor
                 inver = inver + h
-        x_value = 1 / inver
-        for s in range(len(self.s_sf)):
-            sensors = self.s_sf[s]
+            x_value = 1 / inver
             for i, sensor in enumerate(sensors):
                 self.dict_sensors_[sensor]['w'] = (1 / self.dict_sensors_[sensor]['cant']) * x_value
 
@@ -696,27 +700,27 @@ class PSOEnvironment(gym.Env):
             # new = pd.concat([df1, df2], axis=1)
             df1.to_excel('Sensors_data_' + str(self.seed) + '.xlsx')
 
-            for i, subfleet in enumerate(self.sub_fleets):
-                sensors = self.s_sf[i]
-                for s, sensor in enumerate(sensors):
-                    bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
-                    self.plot.benchmark(bench, sensor)
-                    mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
-                    sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['data'])
-                    vehicles = copy.copy(self.dict_sensors_[sensor]['vehicles'])
-                    trajectory = list()
-                    first = True
-                    list_ind = list()
-                    for veh in vehicles:
-                        list_ind.append(self.P.nodes[veh]['index'])
-                        if first:
-                            trajectory = np.array(self.P.nodes[veh]['U_p'])
-                            first = False
-                        else:
-                            new = np.array(self.P.nodes[veh]['U_p'])
-                            trajectory = np.concatenate((trajectory, new), axis=1)
-                    print(trajectory)
-                    self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
+            # for i, subfleet in enumerate(self.sub_fleets):
+            #     sensors = self.s_sf[i]
+            #     for s, sensor in enumerate(sensors):
+            #         bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
+            #         self.plot.benchmark(bench, sensor)
+            #         mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
+            #         sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['data'])
+            #         vehicles = copy.copy(self.dict_sensors_[sensor]['vehicles'])
+            #         trajectory = list()
+            #         first = True
+            #         list_ind = list()
+            #         for veh in vehicles:
+            #             list_ind.append(self.P.nodes[veh]['index'])
+            #             if first:
+            #                 trajectory = np.array(self.P.nodes[veh]['U_p'])
+            #                 first = False
+            #             else:
+            #                 new = np.array(self.P.nodes[veh]['U_p'])
+            #                 trajectory = np.concatenate((trajectory, new), axis=1)
+            #         print(trajectory)
+            #         self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
         else:
             done = False
 
