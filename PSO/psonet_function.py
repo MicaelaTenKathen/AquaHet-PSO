@@ -5,20 +5,21 @@ import sys
 
 import gym
 import networkx as nx
+import pandas as pd
 import openpyxl
 from deap import base
 from deap import creator
 from deap import tools
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, r2_score
 
-# from Benchmark.benchmark_functions import Benchmark_function
-from Benchmark.bench_functions import *
+from Benchmark.benchmark_functions import *
 from Data.limits import Limits
 from Data.utils import Utils
 from Environment.bounds import Bounds
 from Environment.contamination_areas import DetectContaminationAreas
+from Environment.map import *
 from Environment.plot_het import Plots
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -32,7 +33,7 @@ def createPart():
     """
     creator.create("FitnessMax", base.Fitness, weights=(1.0,))
     creator.create("Particle", np.ndarray, fitness=creator.FitnessMax, speed=None, smin=None,
-                   smax=None, gfitness=creator.FitnessMax, node=None, con=None, un=None, pbest=None, gbest=None)
+                   smax=None, node=None)
     creator.create("BestGP", np.ndarray, fitness=creator.FitnessMax)
 
 
@@ -43,9 +44,10 @@ class PSOEnvironment(gym.Env):
                  exploitation_distance=200, reward_function='mse', behavioral_method=0, type_error='all_map',
                  stage='exploration', final_model='samples'):
         self.p_vehicles = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
+        self.s_sensor = ['s1', 's2', 's3', 's4', 's5']
         self.P = nx.MultiGraph()
         self.sub_fleets = None
-        self.sensor_vehicle = sensor_vehicle
+        self.sensor_vehicle = None
         self.type_error = type_error
         self.final_model = final_model
         self.initial_stage = stage
@@ -54,9 +56,8 @@ class PSOEnvironment(gym.Env):
         self.exploration_distance = exploration_distance
         self.exploitation_distance = exploitation_distance
         self.stage = stage
-        self.vehicles = vehicles
-        self.assig_centers = np.zeros((self.vehicles, 1))
-        self.population = vehicles
+        self.vehicles = None
+        self.population = None
         self.resolution = resolution
         self.smin = 0
         self.smax = 3
@@ -75,6 +76,14 @@ class PSOEnvironment(gym.Env):
         self.initial_position = initial_position
         self.method = method
         self.method_pso = method_pso
+        self.mean_error = list()
+        self.conf_error = list()
+        self.mean_peak_error = list()
+        self.conf_peak_error = list()
+        self.sensor = list()
+        self.w = list()
+        self.cant_sensor = list()
+        self.seed_bench = initial_seed
 
         self.dict_sensors_ = {}
         self.dict_benchs_ = {}
@@ -85,19 +94,22 @@ class PSOEnvironment(gym.Env):
         self.n_data = 0
         self.dist_pre = 0
         self.last_sample = 0
-        self.part_ant = np.zeros((1, self.vehicles * 2))
-        self.s_ant = np.zeros(self.vehicles)
-        self.s_n = np.full(self.vehicles, True)
-        self.distances = np.zeros(self.vehicles)
+        self.part_ant = None
+        self.s_ant = None
+        self.s_n = None
+        self.distances = None
         self.s_sf = list()
-        self.array_part = np.zeros((1, self.vehicles * 2))
+        self.array_part = None
         self.post_array = None
         self.bench_function = None
         self.data_particle = ['pbest', 'pbest_fitness', 'gbest', 'un', 'con']
-        self.seed_bench = initial_seed
+        self.p = 0
+        self.max_peaks = None
+        self.r2_sensor = []
+        self.error_peak_sensor = []
 
         if self.method == 0:
-            self.state = np.zeros(self.vehicles * 8, )
+            self.state = None
         else:
             self.state = np.zeros((6, self.xs, self.ys))
 
@@ -105,17 +117,21 @@ class PSOEnvironment(gym.Env):
 
         self.grid_min, self.grid_max, self.grid_max_x, self.grid_max_y = 0, self.ys, self.xs, self.ys
 
-        self.p = 0
-        self.max_peaks = None
-
-        self.df_bounds, self.X_test, self.bench_limits = Bounds(self.resolution, self.xs, self.ys,
+        self.tim = 0
+        if self.tim == 0:
+            self.df_bounds, self.X_test_no, self.bench_limits_no = Bounds(self.resolution, self.xs, self.ys,
                                                                 load_file=False).map_bound()
-        self.secure, self.df_bounds = Bounds(self.resolution, self.xs, self.ys).interest_area()
+            self.X_test, self.bench_limits = Bounds(self.resolution, self.xs, self.ys,
+                                                       load_file=False).available_xtest()
+             # = Bounds(self.resolution, self.xs, self.ys,
+             #                                                    load_file=False).available_xtest()
+            self.tim = 1
+        self.secure = Bounds(self.resolution, self.xs, self.ys).interest_area()
 
         self.plot = Plots(self.xs, self.ys, self.X_test, self.secure, self.grid_min, self.grid_or,
                           self.stage)
 
-        self.util = Utils(self.vehicles)
+        self.util = None
 
         createPart()
 
@@ -135,44 +151,98 @@ class PSOEnvironment(gym.Env):
         part.smax = self.smax
         part.node = self.p_vehicles[self.p]
         self.P.add_node(part.node, S_p=dict.fromkeys(self.sensor_vehicle[self.p], []),
-                        U_p=list_part, Q_p=list(), D_p=dict.fromkeys(self.data_particle))
+                        U_p=list_part, Q_p=list(), D_p=dict.fromkeys(self.data_particle), index=self.p)
         self.p += 1
 
         return part
 
+    def fleet_configuration(self):
+        random.seed(self.seed)
+        self.vehicles = random.randint(2, 8)
+        self.population = copy.copy(self.vehicles)
+        i = 0
+        sensors = []
+        while i < self.vehicles:
+            list_s = []
+            sensor = random.randint(1, 5)
+            index_s = random.sample(range(5), sensor)
+            for j in range(len(index_s)):
+                list_s.append(self.s_sensor[index_s[j]])
+            list_s = sorted(list_s)
+            sensors.append(list_s)
+            i += 1
+        self.sensor_vehicle = sensors
+        print(self.vehicles, self.sensor_vehicle)
+
+    def create_dictionaries(self, sensor):
+        self.dict_sensors_[sensor] = {}
+        self.dict_sensors_[sensor]['vehicles'] = {}
+        self.dict_sensors_[sensor]['mu'] = {}
+        self.dict_sensors_[sensor]['mu']['data'] = []
+        self.dict_sensors_[sensor]['mu']['max'] = []
+        self.dict_sensors_[sensor]['mu']['peaks'] = []
+        self.dict_sensors_[sensor]['sigma'] = {}
+        self.dict_sensors_[sensor]['sigma']['data'] = []
+        self.dict_sensors_[sensor]['sigma']['max'] = []
+        self.dict_sensors_[sensor]['cant'] = 0
+        self.dict_sensors_[sensor]['w'] = 0
+        self.dict_sensors_[sensor]['error'] = {}
+        self.dict_sensors_[sensor]['error']['data'] = []
+        self.dict_sensors_[sensor]['error']['mean'] = []
+        self.dict_sensors_[sensor]['error']['conf'] = []
+        self.dict_sensors_[sensor]['error']['peak'] = {}
+        self.dict_sensors_[sensor]['error']['peak']['data'] = []
+        self.dict_sensors_[sensor]['error']['peak']['mean'] = []
+        self.dict_sensors_[sensor]['error']['peak']['conf'] = []
+        self.dict_benchs_[sensor] = {}
+        self.dict_benchs_[sensor]['map_created'], self.dict_benchs_[sensor][
+            'original'], self.dict_benchs_[sensor]['num_peaks'], self.dict_benchs_[sensor][
+            'index_peaks'] = Benchmark_function(self.grid_or, self.resolution, self.xs, self.ys, self.X_test,
+                                                self.seed_bench, self.vehicles).create_new_map()
+        self.dict_benchs_[sensor]['peaks'] = []
+
+    def peaks_bench(self):
+        for i, subfleet in enumerate(self.sub_fleets):
+            sensors = self.s_sf[i]
+            for s, sensor in enumerate(sensors):
+                peaks = []
+                index_bench = copy.copy(self.dict_benchs_[sensor]['index_peaks'])
+                bench = copy.copy(self.dict_benchs_[sensor]['original'])
+                for j, ind in enumerate(index_bench):
+                    peaks.append(bench[round(ind)])
+                self.dict_benchs_[sensor]['peaks'] = copy.copy(peaks)
+
     def set_sensor(self):
         i = 0
         for node_p in self.P.nodes(data=True):
-            i += 1
             j = 0
             for node_q in self.P.nodes(data=True):
                 j += 1
-                if i <= j:
-                    intersection = node_p[1]["S_p"].keys() & node_q[1]["S_p"].keys()
-                    if node_q != node_p and len(intersection) > 0:
+                if i < j:
+                    intersection = sorted(node_p[1]["S_p"].keys() & node_q[1]["S_p"].keys())
+                    if node_p != node_q and len(intersection) > 0:
                         if not self.P.has_edge(node_p[0], node_q[0]):
                             self.P.add_edge(node_p[0], node_q[0], S_pq=intersection)
-        self.sub_fleets = list(nx.connected_components(self.P))
+
+            i += 1
+        sub = sorted(nx.connected_components(self.P))
+        self.sub_fleets = [sorted(item) for item in sub]
         for i, sub_fleet in enumerate(self.sub_fleets):
+            sub_fleet = sorted(sub_fleet)
             S_sf = set()
             for particle in sub_fleet:
                 S_sf = S_sf | self.P.nodes[particle]['S_p'].keys()
-            for i, sensor in enumerate(S_sf):
-                self.dict_sensors_[sensor] = {}
-                self.dict_sensors_[sensor]['mu'] = {}
-                self.dict_sensors_[sensor]['mu']['data'] = []
-                self.dict_sensors_[sensor]['mu']['max'] = []
-                self.dict_sensors_[sensor]['sigma'] = {}
-                self.dict_sensors_[sensor]['sigma']['data'] = []
-                self.dict_sensors_[sensor]['sigma']['max'] = []
-                self.dict_sensors_[sensor]['cant'] = 0
-                self.dict_sensors_[sensor]['w'] = 0
-                self.dict_benchs_[sensor] = {}
-                self.dict_benchs_[sensor]['map_created'], self.dict_benchs_[sensor][
-                    'original'] = Benchmark_function_het(self.grid_or, 1, self.xs, self.ys, None, self.seed_bench, 0,
-                                                         base_benchmark="shekel",
-                                                         randomize_shekel=True).create_new_map()
-                self.seed_bench += 100
+            S_sf = sorted(S_sf)
+            for j, sensor in enumerate(S_sf):
+                self.create_dictionaries(sensor)
+                list_vehicles = list()
+                for particle in sub_fleet:
+                    v_sensors = self.P.nodes[particle]['S_p'].keys()
+                    for key in v_sensors:
+                        if key == sensor:
+                            list_vehicles.append(particle)
+                self.dict_sensors_[sensor]['vehicles'] = copy.copy(list_vehicles)
+                self.seed_bench += 1000
             self.s_sf.append(S_sf)
             # print(f'Subfleet {i} contains {S_sf} y se usa en eqs. 13c y 13d')
 
@@ -184,6 +254,8 @@ class PSOEnvironment(gym.Env):
                     self.dict_sensors_[sensor]['cant'] = cant
                 # print(f'Particle {particle} contains {self.P.nodes[particle]["S_p"]} y se usa en eqs. 13a y 13b')
         self.w_values()
+        # print(self.sub_fleets)
+        # print('sf', self.s_sf)
 
     def tool(self):
 
@@ -229,21 +301,29 @@ class PSOEnvironment(gym.Env):
         """
         Initialization of the pso.
         """
+        self.seed += 5
+        self.fleet_configuration()
         self.reset_variables()
-        self.tool()
         random.seed(self.seed)
+        self.tool()
         self.swarm()
         self.statistic()
         self.set_sensor()
+        self.peaks_bench()
         self.first_values()
 
     def reset_variables(self):
+        self.p_vehicles = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
+        self.P = nx.MultiGraph()
+        self.sub_fleets = None
         self.dict_sensors_ = {}
         self.dict_benchs_ = {}
         self.mu_best = []
         self.sigma_best = []
         self.best = []
         self.g = 0
+        self.p = 0
+        self.max_peaks = None
         self.n_data = 0
         self.dist_pre = 0
         self.last_sample = 0
@@ -254,6 +334,15 @@ class PSOEnvironment(gym.Env):
         self.s_sf = list()
         self.array_part = np.zeros((1, self.vehicles * 2))
         self.post_array = None
+        self.bench_function = None
+        self.data_particle = ['pbest', 'pbest_fitness', 'gbest', 'un', 'con']
+        self.r2_sensor = []
+        self.error_peak_sensor = []
+        self.sensor = list()
+        self.cant_sensor = list()
+        self.w = list()
+
+        self.util = Utils(self.vehicles)
 
     def updateParticle_n(self, p, c1, c2, c3, c4, part):
 
@@ -262,6 +351,7 @@ class PSOEnvironment(gym.Env):
         """
         list_part = copy.copy(self.P.nodes[part.node]['U_p'])
         d_p = copy.copy(self.P.nodes[part.node]['D_p'])
+        pbest = d_p['pbest']
         gbest = d_p['gbest']
         max_con = d_p['con']
         max_un = d_p['un']
@@ -275,7 +365,7 @@ class PSOEnvironment(gym.Env):
             u2 = c2
             u3 = c3
             u4 = c4
-        v_u1 = u1 * (part.pbest - part)
+        v_u1 = u1 * (pbest - part)
         v_u2 = u2 * (gbest - part)
         v_u3 = u3 * (max_un - part)
         v_u4 = u4 * (max_con - part)
@@ -288,6 +378,8 @@ class PSOEnvironment(gym.Env):
                 part.speed[i] = math.copysign(part.smax, speed)
         part[:] = part + part.speed
         list_part.append(np.array(part))
+        # print(self.g, part.node, gbest, max_un, max_con)
+        # print(part.node, list_part)
         self.P.nodes[part.node]['U_p'] = copy.copy(list_part)
 
         return part
@@ -303,14 +395,16 @@ class PSOEnvironment(gym.Env):
                 x = last[0]
                 y = last[1]
                 q_p.append(last)
-                self.P.nodes[particle]['Q_p'] = q_p
+                # print('q_p', particle, q_p)
+                self.P.nodes[particle]['Q_p'] = copy.copy(q_p)
                 for j, key in enumerate(sensor_list):
-                    measure = copy.copy(sensors[str(key)])
+                    measure = copy.copy(sensors[key])
                     bench = copy.copy(self.dict_benchs_[key]['map_created'])
                     new_measure = bench[x][y]
                     measure.append(new_measure)
                     sensors[key] = copy.copy(measure)
                 self.P.nodes[particle]['S_p'] = copy.copy(sensors)
+                # print(sensors)
 
     def gp_update(self):
         # S_n = {"sensor1": {"mu": [], "sigma": []}}
@@ -320,17 +414,20 @@ class PSOEnvironment(gym.Env):
                 measures_for_sensor = []
                 coordinates_for_sensor = []
                 for p, particle in enumerate(sub_fleet):
-                    s_p = copy.copy(self.P.nodes(data=True)[particle]['S_p'])
-                    q_p = copy.copy(self.P.nodes(data=True)[particle]['Q_p'])
+                    s_p = copy.copy(self.P.nodes[particle]['S_p'])
+                    q_p = copy.copy(self.P.nodes[particle]['Q_p'])
                     sensor_key = s_p.keys()
                     for r, sensorp in enumerate(sensor_key):
-                        if sensor in sensorp:
+                        if sensorp == sensor:
+                            # print(sensorp, s_p[sensorp])
                             measures_for_sensor.extend(s_p[sensorp])
                             coordinates_for_sensor.extend(q_p)
                 coordinates_for_sensor = np.array(coordinates_for_sensor).reshape(-1, 2)
                 # print(s, sensor)
                 # print(coordinates_for_sensor)
                 # print(measures_for_sensor)
+                # print('coord', coordinates_for_sensor)
+                # print('measure', measures_for_sensor)
                 self.gpr.fit(coordinates_for_sensor, measures_for_sensor)
                 self.dict_sensors_[sensor]['mu']['data'], self.dict_sensors_[sensor]['sigma'][
                     'data'] = self.gpr.predict(self.X_test, return_std=True)
@@ -360,6 +457,7 @@ class PSOEnvironment(gym.Env):
                 self.dict_sensors_[sensor]['mu']['max'] = [max_mu, coord_mu]
                 max_sigma, coord_sigma = self.obtain_max(sigma)
                 self.dict_sensors_[sensor]['sigma']['max'] = [max_sigma, coord_sigma]
+                # print('max_mu', max_mu, 'max_sigma', max_sigma)
 
     def w_values(self):
         cant_type = len(self.s_sf)
@@ -374,8 +472,7 @@ class PSOEnvironment(gym.Env):
         for s in range(len(self.s_sf)):
             sensors = self.s_sf[s]
             for i, sensor in enumerate(sensors):
-                self.dict_sensors_[sensor]['w'] = (1/self.dict_sensors_[sensor]['cant']) * x_value
-                print(sensor, self.dict_sensors_[sensor]['w'])
+                self.dict_sensors_[sensor]['w'] = (1 / self.dict_sensors_[sensor]['cant']) * x_value
 
     def method_coupled(self):
         for i, subfleet in enumerate(self.sub_fleets):
@@ -388,6 +485,7 @@ class PSOEnvironment(gym.Env):
                 w_value = self.dict_sensors_[sensor]['w']
                 max_con = max_con + w_value * coord_mu
                 max_un = max_un + w_value * coord_sigma
+                # print('max', max_mu, coord_mu)
             for p, particle in enumerate(subfleet):
                 self.P.nodes[particle]['D_p']['con'] = max_con
                 self.P.nodes[particle]['D_p']['un'] = max_un
@@ -417,16 +515,16 @@ class PSOEnvironment(gym.Env):
                 self.P.nodes[particle]['D_p']['un'] = max_un
 
     def local_best(self, part, dfirst):
-        part, self.s_n = Limits(self.secure, self.xs, self.ys).new_limit(self.g, part, self.s_n, self.n_data,
+        part, self.s_n = Limits(self.secure, self.xs, self.ys, self.vehicles).new_limit(self.g, part, self.s_n, self.n_data,
                                                                          self.s_ant, self.part_ant)
         x_bench = int(part[0])
         y_bench = int(part[1])
 
         sensors = self.P.nodes[part.node]['S_p']
-        sensor_list = list(sensors.keys())
+        sensor_list = sensors.keys()
 
-        for i in range(len(sensor_list)):
-            bench = copy.copy(self.dict_benchs_[sensor_list[i]]['map_created'])
+        for i, key in enumerate(sensor_list):
+            bench = copy.copy(self.dict_benchs_[key]['map_created'])
             pbest = [bench[x_bench][y_bench]]
             if i == 0:
                 new_pbest = pbest
@@ -436,36 +534,81 @@ class PSOEnvironment(gym.Env):
 
         part.fitness.values = new_pbest
         if dfirst:
-            part.pbest = creator.Particle(part)
-            self.P.nodes[part.node]['D_p']['pbest'] = part.pbest
-            part.pbest.fitness.values = part.fitness.values
-            self.P.nodes[part.node]['D_p']['pbest_fitness'] = part.pbest.fitness.values
+            part.best = creator.Particle(part)
+            part.best.fitness.values = copy.copy(part.fitness.values)
         else:
-            if part.pbest.fitness < part.fitness:
-                part.pbest = creator.Particle(part)
-                self.P.nodes[part.node]['D_p']['pbest'] = part.pbest
-                part.pbest.fitness.values = part.fitness.values
-                self.P.nodes[part.node]['D_p']['pbest_fitness'] = part.pbest.fitness.values
+            if part.best.fitness < part.fitness:
+                part.best = creator.Particle(part)
+                part.best.fitness.values = copy.copy(part.fitness.values)
+        self.P.nodes[part.node]['D_p']['pbest'] = copy.copy(part.best)
+        self.P.nodes[part.node]['D_p']['pbest_fitness'] = copy.copy(part.best.fitness.values)
 
     def global_best(self):
         for i, subfleet in enumerate(self.sub_fleets):
-            t = 1
             for p, particle in enumerate(subfleet):
-                if t == 1:
-                    new_gbest = self.P.nodes[particle]['D_p']['pbest_fitness']
-                    coord_gbest = self.P.nodes[particle]['D_p']['pbest']
+                if p == 0:
+                    new_gbest = copy.copy(self.P.nodes[particle]['D_p']['pbest_fitness'])
+                    coord_gbest = copy.copy(self.P.nodes[particle]['D_p']['pbest'])
                 else:
                     if new_gbest < self.P.nodes[particle]['D_p']['pbest_fitness']:
-                        new_gbest = self.P.nodes[particle]['D_p']['pbest_fitness']
-                        coord_gbest = self.P.nodes[particle]['D_p']['pbest']
-                t += 1
+                        new_gbest = copy.copy(self.P.nodes[particle]['D_p']['pbest_fitness'])
+                        coord_gbest = copy.copy(self.P.nodes[particle]['D_p']['pbest'])
             for p, particle in enumerate(subfleet):
                 self.P.nodes[particle]['D_p']['gbest'] = coord_gbest
 
-        # global_best = new_gbest
-        # if part.gbest.gfitness < part.gfitness:
-        #     part.gbest = creator.Particle(part)
-        #     part.gbest.gfitness.values = part.gfitness.values
+    def peaks_mu(self, sensor):
+        peaks = []
+        index_bench = copy.copy(self.dict_benchs_[sensor]['index_peaks'])
+        bench = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
+        for j, ind in enumerate(index_bench):
+            peaks.append(bench[round(ind)])
+        self.dict_sensors_[sensor]['mu']['peaks'] = copy.copy(peaks)
+
+    def calculate_error(self):
+        if self.type_error == 'all_map':
+            r2_simulation = []
+            for i, subfleet in enumerate(self.sub_fleets):
+                sensors = self.s_sf[i]
+                for s, sensor in enumerate(sensors):
+                    bench = copy.copy(self.dict_benchs_[sensor]['original'])
+                    mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
+                    r2 = r2_score(y_true=bench, y_pred=mu)
+                    cant_sensor = self.dict_sensors_[sensor]['cant']
+                    w = self.dict_sensors_[sensor]['w']
+                    r2_simulation.append(r2)
+                    self.r2_sensor.append(r2)
+                    self.sensor.append(sensor)
+                    self.cant_sensor.append(cant_sensor)
+                    self.w.append(w)
+            r2_simulation = np.array(r2_simulation)
+            r2_mean = np.mean(r2_simulation)
+            r2_std = np.std(r2_simulation)
+            self.mean_error.append(r2_mean)
+            self.conf_error.append(r2_std * 1.96)
+        elif self.type_error == 'peaks':
+            error_simulation = []
+            conf_simulation = []
+            for i, subfleet in enumerate(self.sub_fleets):
+                sensors = self.s_sf[i]
+                for s, sensor in enumerate(sensors):
+                    error_peaks = []
+                    self.peaks_mu(sensor)
+                    bench = copy.copy(self.dict_benchs_[sensor]['peaks'])
+                    mu = copy.copy(self.dict_sensors_[sensor]['mu']['peaks'])
+                    for j, be in enumerate(bench):
+                        error_peak = be - mu[j]
+                        error_peaks.append(error_peak)
+                    error_peaks = np.array(error_peaks)
+                    error_mean_s = np.mean(error_peaks)
+                    self.error_peak_sensor.append(error_mean_s)
+                    error_std_s = np.std(error_peaks)
+                    error_simulation.append(error_mean_s)
+                    conf_simulation.append(error_std_s * 1.96)
+            error_simulation = np.array(error_simulation)
+            error_mean = np.mean(error_simulation)
+            error_conf = np.std(error_simulation)
+            self.mean_peak_error.append(error_mean)
+            self.conf_peak_error.append(error_conf * 1.96)
 
     def first_values(self):
         for part in self.pop:
@@ -511,6 +654,10 @@ class PSOEnvironment(gym.Env):
             for part in self.pop:
                 self.local_best(part, dfirst=False)
 
+                self.n_data += 1
+                if self.n_data > self.vehicles - 1:
+                    self.n_data = 0
+
             self.global_best()
 
             for part in self.pop:
@@ -534,20 +681,58 @@ class PSOEnvironment(gym.Env):
             dis_steps = np.mean(self.distances) - dist_ant
             if np.max(self.distances) == previous_dist:
                 break
-        self.g += 1
-        print(self.distances)
+            self.g += 1
 
-        if (np.mean(self.distances) >= self.exploitation_distance) or np.max(self.distances) == self.dist_pre:
+        if (np.max(self.distances) >= self.exploitation_distance) or np.max(self.distances) == self.dist_pre:
             done = True
+            self.type_error = 'all_map'
+            self.calculate_error()
+            self.type_error = 'peaks'
+            self.calculate_error()
+            df1 = {'Sensor': self.sensor, 'R2_sensor': self.r2_sensor, 'Error_peak_sensor': self.error_peak_sensor, 'Number': self.cant_sensor, 'w': self.w}
+            df1 = pd.DataFrame(data=df1)
+            # df2 = {'Sensors': self.sensor_vehicle}
+            # df2 = pd.DataFrame(data=df2)
+            # new = pd.concat([df1, df2], axis=1)
+            df1.to_excel('Sensors_data_' + str(self.seed) + '.xlsx')
+
             for i, subfleet in enumerate(self.sub_fleets):
                 sensors = self.s_sf[i]
                 for s, sensor in enumerate(sensors):
                     bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
-                    self.plot.benchmark(bench)
+                    self.plot.benchmark(bench, sensor)
                     mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
                     sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['data'])
-                    self.plot.plot_classic(mu, sigma, self.part_ant)
+                    vehicles = copy.copy(self.dict_sensors_[sensor]['vehicles'])
+                    trajectory = list()
+                    first = True
+                    list_ind = list()
+                    for veh in vehicles:
+                        list_ind.append(self.P.nodes[veh]['index'])
+                        if first:
+                            trajectory = np.array(self.P.nodes[veh]['U_p'])
+                            first = False
+                        else:
+                            new = np.array(self.P.nodes[veh]['U_p'])
+                            trajectory = np.concatenate((trajectory, new), axis=1)
+                    print(trajectory)
+                    self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
         else:
             done = False
 
         return done
+
+    def data_out(self):
+        data1 = {'R2': self.mean_error, 'Conf_R2': self.conf_error, 'Mean_Error': self.mean_peak_error, 'Conf_Error': self.conf_peak_error}
+        df = pd.DataFrame(data=data1)
+        df.to_excel('Main_results.xlsx')
+        fig1, ax1 = plt.subplots()
+        ax1.set_title('R2 All Map')
+        ax1.boxplot(self.mean_error, notch=True)
+        fig2, ax2 = plt.subplots()
+        ax2.set_title('Error peaks')
+        ax2.boxplot(self.mean_peak_error, notch=True)
+        plt.show()
+
+        print('R2:', np.mean(np.array(self.mean_error)), '+-', np.std(np.array(self.mean_error)) * 1.96)
+        print('Error:', np.mean(np.array(self.mean_peak_error)), '+-', np.std(np.array(self.mean_peak_error)) * 1.96)

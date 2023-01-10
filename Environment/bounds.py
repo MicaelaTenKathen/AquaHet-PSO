@@ -2,6 +2,7 @@ from Environment.map import Map
 from Data.data_path import *
 import pandas as pd
 import numpy as np
+from PIL import Image
 
 
 class Bounds():
@@ -11,8 +12,56 @@ class Bounds():
         self.ys = ys
         self.load_file = load_file
         self.file = file
+        self.scale = 0.96
+        self.new_xs = int(self.scale * self.xs)
+        self.new_ys = int(self.scale * self.ys)
 
         return
+
+    def black_white_scale(self):
+        im = Image.open(map_path_classic())
+        # im = Image.open(map_path())
+        nim = im.resize((self.new_xs, self.new_ys))
+        array = np.zeros((self.new_xs, self.new_ys))
+        img = Image.new('RGB', (self.new_xs, self.new_ys))
+        j = 0
+        while j < self.new_ys:
+            i = 0
+            while i < self.new_xs:
+                r, g, b = nim.getpixel((i, j))
+                p = (r * 0.3 + g * 0.59 + b * 0.11)
+                gray = int(p)
+                if gray < 225:
+                    color = 255
+                    bit = 0
+                else:
+                    color = 0
+                    bit = 1
+                pixel = tuple([color, color, color])
+                img.putpixel((i, j), pixel)
+                array[i, j] = int(bit)
+                i += 1
+            j += 1
+
+        return array
+
+    def new_map_scaled(self):
+        array_scaled = self.black_white_scale()
+        row_add = int((self.xs - self.new_xs) / 2)
+        column_add = int((self.ys - self.new_ys) / 2)
+        map_scaled = np.zeros((self.xs, self.ys))
+        i = 0
+        j = 0
+        while j < self.new_ys:
+            i = 0
+            y = j + column_add
+            while i < self.new_xs:
+                x = i + row_add
+                if array_scaled[i][j] == 1:
+                    map_scaled[x][y] = 1
+                i += 1
+            j += 1
+        return map_scaled
 
     def map_bound(self):
         if self.load_file:
@@ -31,7 +80,7 @@ class Bounds():
             available, first, last, y_first, y_last = list(), list(), list(), list(), list()
             confirm = list()
             index, first_x, last_x, all_y = list(), list(), list(), list()
-            grid = Map(self.xs, self.ys).black_white()
+            grid = self.new_map_scaled()
             bound = True
 
             f, o = True, False
@@ -118,10 +167,90 @@ class Bounds():
             with open(gp, 'wb') as gd:
                 np.save(gd, grid)
 
+            return df_bounds, available, bench_limits
+
+    def available_xtest(self):
+        if self.load_file:
+            with open('./GroundTruth/bounds.npy'.format(self.file), 'rb') as bn:
+                df_bounds = np.load(bn)
+
+            with open('./GroundTruth/grid.npy'.format(self.file), 'rb') as gd:
+                grid = np.load(gd)
+
+            with open('./GroundTruth/available.npy'.format(self.file), 'rb') as av:
+                available = np.load(av)
+
+            return df_bounds, available
+
+        else:
+            available, first, last, y_first, y_last = list(), list(), list(), list(), list()
+            confirm = list()
+            index, first_x, last_x, all_y = list(), list(), list(), list()
+            grid = Map(self.xs, self.ys).black_white()
+            bound = True
+
+            f, o = True, False
+            for j in range(len(grid[1])):
+                for i in range(len(grid)):
+                    if grid[i, j] == 1:
+                        if bound:
+                            first.append(i)
+                            y_first.append(j)
+                            u = 4 + int(y_first[0])
+                            if f:
+                                if j > u:
+                                    if y_first[-1] == y_last[-1]:
+                                        first[-5] = first[-2]
+                                        first.insert(-4, first[-1])
+                                        y_first.insert(-4, y_first[-5])
+                                        first[-4] = first[-2]
+                                        first.insert(-3, first[-1])
+                                        y_first.insert(-3, y_first[-4])
+                                        first[-3] = first[-2]
+                                        first.insert(-2, first[-1])
+                                        y_first.insert(-2, y_first[-3])
+                                        o = True
+                                        f = False
+                            bound = False
+                        available.append([i, j])
+                        grid_ant = i
+                        grid_y = j
+                    else:
+                        if not bound:
+                            last.append(grid_ant)
+                            y_last.append(grid_y)
+                            bound = True
+                            if o:
+                                last[-5] = last[-2]
+                                last.insert(-4, last[-1])
+                                last[-4] = last[-2]
+                                last.insert(-3, last[-1])
+                                last[-3] = last[-2]
+                                last.insert(-2, last[-1])
+                                o = False
+
+            ap = available_path_classic()
+            # bp = bounds_path()
+            # gp = grid_path()
+            # ap = available_path()
+            x = list()
+            y = list()
+            for i in range(len(available)):
+                coord = available[i]
+                x_av = coord[0]
+                y_av = coord[1]
+                x.append(x_av)
+                y.append(y_av)
+            min_x = min(x)
+            max_x = max(x)
+            min_y = min(y)
+            max_y = max(y)
+            bench_limits = [min_x, max_x, min_y, max_y]
+
             with open(ap, 'wb') as av:
                 np.save(av, available)
 
-            return df_bounds, available, bench_limits
+            return available, bench_limits
 
     def interest_area(self):
         if self.load_file:
@@ -132,7 +261,8 @@ class Bounds():
                 se_available = np.load(sa)
             return secure_grid, se_available
         else:
-            df_bounds, available, bench_limits = Bounds(self.resolution, self.xs, self.ys).map_bound()
+            df_bounds, available, bench_limits = self.map_bound()
+
             secure_grid = np.zeros((self.xs, self.ys))
 
             for i in range(len(df_bounds)):
@@ -179,7 +309,7 @@ class Bounds():
             with open(seap, 'wb') as sa:
                 np.save(sa, se_available)
 
-            return secure_grid, df_bounds
+            return secure_grid
 
     def bounds_y(self):
         available, x_first, last_y, y_first, x_last, y_last = list(), list(), list(), list(), list(), list()

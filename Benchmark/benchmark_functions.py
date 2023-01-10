@@ -16,10 +16,9 @@ import random
 
 
 class Benchmark_function():
-    def __init__(self, grid, resolution, xs, ys, X_test, initial_seed, vehicles, w_ostacles=False, obstacles_on=False,
+    def __init__(self, grid, resolution, xs, ys, X_test, initial_seed, w_ostacles=False, obstacles_on=False,
                  randomize_shekel=True):
         self.w_obstacles = w_ostacles
-        self.vehicles = vehicles
         self.grid = grid
         self.X_test = X_test
         self.resolution = resolution
@@ -74,17 +73,13 @@ class Benchmark_function():
               #  self.c.append(5)
             #self.a = np.array(self.a)
             #self.c = np.array(self.c).T
-            ve = 4
-            if self.vehicles == 2:
-                num_of_peaks = 2
-            else:
-                num_of_peaks = np.random.RandomState(self.seed).randint(low=2, high=self.vehicles)
-            #num_of_peaks = 4
+            num_of_peaks = np.random.RandomState(self.seed).randint(low=1, high=4)
+            #num_of_peaks = 1
             #self.a1 = np.random.RandomState(self.seed).random(size=(num_of_peaks, 2))
             #self.a = np.array([[0.5, 0.5], [0.25, 0.25], [0.25, 0.75], [0.9, 0.1]]) * 100
             #print(self.a)
 
-            self.c = np.random.RandomState(self.seed).rand(num_of_peaks, 1) * 400 + 120
+            self.c = np.random.RandomState(self.seed).rand(num_of_peaks, 1) * 250 + 120
             #self.a1 = np.array(self.a1)
             #self.c = np.array(self.c).T
 
@@ -97,18 +92,10 @@ class Benchmark_function():
                 #arr = arr[::-1]
                 #self.a.append(arr)
             random.seed(self.seed)
-            if self.vehicles <= 4:
-                zone = random.sample(range(4), num_of_peaks)
-            else:
-                zone = list()
-                for i in range(num_of_peaks):
-                    zone.append(random.randint(0, 3))
-            #print(zone)
-            #zone = [random.randrange(1, 4, 1) for i in range(num_of_peaks)]
+            zone = random.sample(range(4), num_of_peaks)
             for i in range(len(zone)):
                 if zone[i] == 0:
                     id1 = index_a1[i] * len(self.yukyry) - 1
-                    #print(id1)
                     id2 = self.yukyry[round(id1[0])]
                     arr = self.X_test[id2]
                     arr = arr[::-1]
@@ -137,14 +124,12 @@ class Benchmark_function():
                     index_a.append(id2)
             self.a = np.array(self.a)
             index_a = np.array(index_a)
-            #print(self.a)
             #self.c = np.ones((num_of_peaks)) * 250
             #print(self.c)
         else:
             a = 1
             #self.a = np.array([[0.16, 1 / 1.5], [0.9, 0.2 / 1.5]])
             #self.c = np.array([0.15, 0.15]).T
-
 
         X1 = np.arange(0, self.grid.shape[1], 1)
         Y1 = np.arange(0, self.grid.shape[0], 1)
@@ -162,7 +147,7 @@ class Benchmark_function():
         #X = np.linspace(0, 1, self.grid.shape[1])
         #Y = np.linspace(0, 1, self.grid.shape[0])
         #X, Y = np.meshgrid(X, Y)
-        #print(np.where(map_created1 == np.max(map_created1)))
+        # print(np.where(map_created1 == np.max(map_created1)))
         #map_created1 = np.zeros(X.shape)
 
         #for i in range(X.shape[0]):
@@ -170,14 +155,10 @@ class Benchmark_function():
           #      map_created1[i,j] = self.shekel_arg((X[i,j], Y[i,j]))
         #map_created = np.fromiter(map(self.shekel_arg, zip(X.flat, Y.flat, self.grid.flat)), dtype=np.float,
          #               count=X.shape[0] * X.shape[1]).reshape(X.shape)
-        #meanz = np.nanmean(map_created1)
-        #stdz = np.nanstd(map_created1)
-        #map_created2 = (map_created1 - meanz) / stdz
         map_max = np.max(map_created1)
         map_min = np.min(map_created1)
-        map_created = list(map(lambda x: (x - map_min)/(map_max - map_min), map_created1))
+        map_created = list(map(lambda x: (x - map_min) / (map_max - map_min), map_created1))
         map_created = np.array(map_created)
-        #print(map_created)
 
         #fig = plt.figure()
         #ax1 = fig.add_subplot(111)
@@ -198,7 +179,7 @@ class Benchmark_function():
         #bench_function = np.array(self.bench)  # Return solo esto de benchmark function
 
         bench = list()
-        df_bounds_or, X_test_or, bench_list = Bounds(self.resolution, self.xs, self.ys, load_file=False).map_bound()
+        X_test_or, ben = Bounds(self.resolution, self.xs, self.ys, load_file=False).available_xtest()
         for i in range(len(X_test_or)):
             bench.append(map_created[X_test_or[i][0], X_test_or[i][1]])
 

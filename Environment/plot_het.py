@@ -129,7 +129,7 @@ class Plots():
         # plt.savefig("../Image/GT3/Tabla_4.png")
         plt.show()
 
-    def benchmark(self, bench_function):
+    def benchmark(self, bench_function, sensor):
         plot_bench = np.copy(bench_function)
         plot_bench[self.grid_or == 0] = np.nan
         levels = np.arange(0, 1, 0.2)
@@ -145,6 +145,7 @@ class Plots():
         ax1.set_ylim([self.ys, 0])
         ax1.set_aspect('equal')
         ax1.grid(True)
+        ax1.set_title(sensor)
         ticks_x = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
         ax1.xaxis.set_major_formatter(ticks_x)
 
@@ -243,7 +244,7 @@ class Plots():
 
         plt.show()
 
-    def plot_classic(self, mu, sigma, part_ant):
+    def plot_classic(self, mu, sigma, part_ant, sensor, list_ind):
         Z_var, Z_mean = self.Z_var_mean(mu, sigma)
         fig, axs = plt.subplots(2, 1, figsize=(5, 10))
         initial_x = list()
@@ -260,7 +261,7 @@ class Plots():
 
         vehicles = int(part_ant.shape[1] / 2)
         for i in range(vehicles):
-            self.plot_trajectory_classic(axs[0], part_ant[:, 2 * i], part_ant[:, 2 * i + 1], colormap=self.colors[i])
+            self.plot_trajectory_classic(axs[0], part_ant[:, 2 * i], part_ant[:, 2 * i + 1], colormap=self.colors[list_ind[i]])
 
         axs[0].plot(initial_x, initial_y, 'o', color='black', markersize=3, label='ASVs initial positions')
         axs[0].plot(final_x, final_y, 'X', color='red', markersize=3, label='ASVs final positions')
@@ -297,6 +298,7 @@ class Plots():
         axs[1].yaxis.set_major_formatter(ticks_y)
 
         #plt.savefig("../Image/Contamination/GT3/Tabla_3.png")
+        plt.title(sensor)
         plt.show()
 
     def movement_exploration(self, mu, sigma, part_ant):

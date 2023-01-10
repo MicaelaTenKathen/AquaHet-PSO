@@ -3,11 +3,15 @@ from sys import path
 
 
 class Limits:
-    def __init__(self, grid, xs, ys, file=0):
+    def __init__(self, grid, xs, ys, vehicles, file=0):
         self.file = file
         self.secure = grid
         self.xs = xs
         self.ys = ys
+        self.bn_ant = {}
+        i = 1
+        with open('../GroundTruth/bounds.npy'.format(self.file), 'rb') as bn:
+            self.df_bounds_x = np.load(bn)
         return
 
     def ratio_s(self, x_int, y_int, part):
@@ -43,9 +47,7 @@ class Limits:
                             part[1] = y_i
         return part
 
-    def new_limit(self, g, part, s_n, n_data, s_ant, part_ant):
-        with open('../GroundTruth/bounds.npy'.format(self.file), 'rb') as bn:
-            df_bounds = np.load(bn)
+    def new_limit(self, g, part, s_n_x, n_data, s_ant_x, part_ant):
         n_dat = n_data + 1
         x_int = int(part[0])
         y_int = int(part[1])
@@ -56,36 +58,37 @@ class Limits:
             part[1] = self.ys - 1
             y_int = (part[1])
         if self.secure[x_int, y_int] == 0:
-            s, n = 0, 0
-            bn = list()
-            for i in range(len(df_bounds)):
-                if int(y_int) == df_bounds[i, 2]:
-                    s += 1
-                    bn.append(df_bounds[i, :])
-            if s == 0:
-                if part[1] < df_bounds[0, 2]:
-                    part[1] = df_bounds[0, 2] + 2
-                    for i in range(len(df_bounds)):
-                        if df_bounds[i, 2] == int(part[1]):
-                            s += 1
-                            bn.append(df_bounds[i, :])
+            s_x, n_x = 0, 0
+            bn_x = list()
+            for i in range(len(self.df_bounds_x)):
+                if int(y_int) == self.df_bounds_x[i, 2]:
+                    s_x += 1
+                    bn_x.append(self.df_bounds_x[i, :])
+            if s_x == 0:
+                if part[1] < self.df_bounds_x[0, 2]:
+                    part[1] = self.df_bounds_x[0, 2] + 2
+                    for i in range(len(self.df_bounds_x)):
+                        if self.df_bounds_x[i, 2] == int(part[1]):
+                            s_x += 1
+                            bn_x.append(self.df_bounds_x[i, :])
                 else:
-                    part[1] = df_bounds[-1, 2] - 2
-                    for i in range(len(df_bounds)):
-                        if df_bounds[i, 2] == int(part[1]):
-                            s += 1
-                            bn.append(df_bounds[i, :])
-            bn = np.array(bn)
-            limit = Limits(self.secure, self.xs, self.ys)
-            if s_ant[n_data] > 1 and s_n[n_data]:
-                part = limit.ratio_s(part_ant[g, 2 * n_data], part_ant[g, 2 * n_data + 1], part)
-                s_n[n_data] = False
+                    part[1] = self.df_bounds_x[-1, 2] - 2
+                    for i in range(len(self.df_bounds_x)):
+                        if self.df_bounds_x[i, 2] == int(part[1]):
+                            s_x += 1
+                            bn_x.append(self.df_bounds_x[i, :])
+            bn = np.array(bn_x)
+            if s_ant_x[n_data] > 1 and s_n_x[n_data]:
+                part = self.ratio_s(part_ant[g, 2 * n_data], part_ant[g, 2 * n_data + 1], part)
+                s_n_x[n_data] = False
             else:
                 if part[0] <= bn[0, 0]:
                     part[0] = bn[0, 0] + 2
                 else:
                     part[0] = bn[0, 1] - 2
-            s_ant[n_data] = s
+            s_ant_x[n_data] = s_x
+
+
             #if n_dat == 1.0:
              #   if s_ant[0] > 1 and s_1:
               #      part = limit.ratio_s(part_ant[g, 0], part_ant[g, 1], part)
@@ -128,11 +131,9 @@ class Limits:
                     #    part[0] = bn[0, 1] - 2
                 #s_ant[3] = s
         #s_n = [s_1, s_2, s_3, s_4]
-        return part, s_n
+        return part, s_n_x
 
     def check_lm_limits(self, n_pos, vehicle):
-        with open('../GroundTruth/bounds.npy'.format(self.file), 'rb') as bn:
-            df_bounds = np.load(bn)
         with open('../GroundTruth/boundsy.npy'.format(self.file), 'rb') as bn:
             df_boundsy = np.load(bn)
         check = True
@@ -146,9 +147,9 @@ class Limits:
             y_int = (n_pos[1])
         ch = 0
         if vehicle % 2 == 0:
-            for i in range(len(df_bounds)):
-                if int(y_int) == df_bounds[i, 2]:
-                    if int(x_int) <= df_bounds[i, 0] or int(x_int) >= df_bounds[i, 1]:
+            for i in range(len(self.df_bounds)):
+                if int(y_int) == self.df_bounds[i, 2]:
+                    if int(x_int) <= self.df_bounds[i, 0] or int(x_int) >= self.df_bounds[i, 1]:
                         ch = 1
                     if ch == 1:
                         check = False
