@@ -298,7 +298,7 @@ class Plots():
         axs[1].yaxis.set_major_formatter(ticks_y)
 
         #plt.savefig("../Image/Contamination/GT3/Tabla_3.png")
-        plt.title(sensor)
+        plt.title(str(sensor))
         plt.show()
 
     def movement_exploration(self, mu, sigma, part_ant):

@@ -89,7 +89,7 @@ vehicles = 5
 #stage = 'exploration'
 stage = 'no_exploitation'
 method = 0
-pso = PSOEnvironment(resolution, ys, method, method_pso='coupled', initial_seed=1000200, initial_position=initial_position, sensor_vehicle=sensors, vehicles=vehicles,
+pso = PSOEnvironment(resolution, ys, method, method_pso='coupled', initial_seed=1000, initial_position=initial_position, sensor_vehicle=sensors, vehicles=vehicles,
                      exploration_distance=200, exploitation_distance=200, reward_function='inc_mse',
                      type_error='all_map', stage=stage, final_model='federated')
 
