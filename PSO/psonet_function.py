@@ -224,7 +224,6 @@ class PSOEnvironment(gym.Env):
                 for j, ind in enumerate(index_bench):
                     peaks.append(bench[round(ind)])
                 self.dict_benchs_[sensor]['peaks'] = copy.copy(peaks)
-                print(peaks)
 
     def set_sensor(self):
         i = 0
@@ -486,16 +485,34 @@ class PSOEnvironment(gym.Env):
             sensors = self.s_sf[i]
             max_con = [0, 0]
             max_un = [0, 0]
+            # for s, sensor in enumerate(sensors):
+            #     max_mu, coord_mu = self.dict_sensors_[sensor]['mu']['max']
+            #     max_sigma, coord_sigma = self.dict_sensors_[sensor]['sigma']['max']
+            #     w_value = self.dict_sensors_[sensor]['w']
+            #     max_con = max_con + w_value * coord_mu
+            #     max_un = max_un + w_value * coord_sigma
+            #     # print('max', max_mu, coord_mu)
+            summatory_mu = list()
+            summatory_sigma = list()
             for s, sensor in enumerate(sensors):
-                max_mu, coord_mu = self.dict_sensors_[sensor]['mu']['max']
-                max_sigma, coord_sigma = self.dict_sensors_[sensor]['sigma']['max']
+                mu = list(copy.copy(self.dict_sensors_[sensor]['mu']['data']))
+                sigma = list(copy.copy(self.dict_sensors_[sensor]['sigma']['data']))
                 w_value = self.dict_sensors_[sensor]['w']
-                max_con = max_con + w_value * coord_mu
-                max_un = max_un + w_value * coord_sigma
+                if s == 0:
+                    summatory_mu = [data_m * w_value for data_m in mu]
+                    summatory_sigma = [data_s * w_value for data_s in sigma]
+                else:
+                    data_mu = [data_m * w_value for data_m in mu]
+                    data_sigma = [data_s * w_value for data_s in sigma]
+                    summatory_mu = list(map(add, summatory_mu, data_mu))
+                    summatory_sigma = list(map(add, summatory_sigma, data_sigma))
+                    max_mu, coord_mu = copy.copy(self.dict_sensors_[sensor]['mu']['max'])
                 # print('max', max_mu, coord_mu)
+            ind_mu = summatory_mu.index(max(summatory_mu))
+            ind_sigma = summatory_sigma.index(max(summatory_sigma))
             for p, particle in enumerate(subfleet):
-                self.P.nodes[particle]['D_p']['con'] = max_con
-                self.P.nodes[particle]['D_p']['un'] = max_un
+                self.P.nodes[particle]['D_p']['con'] = self.X_test[ind_mu]
+                self.P.nodes[particle]['D_p']['un'] = self.X_test[ind_sigma]
 
     def method_decoupled(self):
         for i, subfleet in enumerate(self.sub_fleets):
@@ -543,11 +560,10 @@ class PSOEnvironment(gym.Env):
         summatory = list()
         for i, key in enumerate(sensor_list):
             w = copy.copy(self.dict_sensors_[key]['w'])
+            value = copy.copy(self.P.nodes[part.node]['fitness_list'][key])
             if i == 0:
-                value = copy.copy(self.P.nodes[part.node]['fitness_list'][key])
                 summatory = [data * w for data in value]
             else:
-                value = copy.copy(self.P.nodes[part.node]['fitness_list'][key])
                 list1 = [data * w for data in value]
                 summatory = list(map(add, summatory, list1))
         ind = summatory.index(max(summatory))
@@ -570,6 +586,9 @@ class PSOEnvironment(gym.Env):
         for i, key in enumerate(sensor_list):
             bench = copy.copy(self.dict_benchs_[key]['map_created'])
             pbest = [bench[x_bench][y_bench]]
+            list_f = copy.copy(self.P.nodes[part.node]['fitness_list'][key])
+            list_f.append(pbest[0])
+            self.P.nodes[part.node]['fitness_list'][key] = copy.copy(list_f)
 
             if dfirst:
                 self.P.nodes[part.node]['pbest'][key] = part
