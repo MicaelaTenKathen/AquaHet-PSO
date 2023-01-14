@@ -164,7 +164,8 @@ class PSOEnvironment(gym.Env):
 
     def fleet_configuration(self):
         random.seed(self.seed)
-        self.vehicles = random.randint(2, 8)
+        # self.vehicles = random.randint(2, 8)
+        self.vehicles = 4
         self.population = copy.copy(self.vehicles)
         i = 0
         sensors = []
@@ -179,7 +180,8 @@ class PSOEnvironment(gym.Env):
         #     i += 1
         while i < self.vehicles:
             number = random.randint(0, 20)
-            list_s = sorted(self.sensor_v[number])
+            # list_s = sorted(self.sensor_v[number])
+            list_s = ['s1']
             sensors.append(list_s)
             i += 1
         self.sensor_vehicle = sensors
@@ -255,7 +257,7 @@ class PSOEnvironment(gym.Env):
                         if key == sensor:
                             list_vehicles.append(particle)
                 self.dict_sensors_[sensor]['vehicles'] = copy.copy(list_vehicles)
-                self.seed_bench += 13
+                self.seed_bench += 130
             self.s_sf.append(S_sf)
             # print(f'Subfleet {i} contains {S_sf} y se usa en eqs. 13c y 13d')
 
@@ -314,7 +316,7 @@ class PSOEnvironment(gym.Env):
         """
         Initialization of the pso.
         """
-        self.seed += 100
+        self.seed += 1
         self.fleet_configuration()
         self.reset_variables()
         random.seed(self.seed)
@@ -547,10 +549,9 @@ class PSOEnvironment(gym.Env):
         list_part = copy.copy(self.P.nodes[part.node]['U_p'])
         list_part.append(np.array(part))
 
-        sensors = self.P.nodes[part.node]['S_p']
-        sensor_list = sensors.keys()
+        sensors = self.P.nodes[part.node]['S_p'].keys()
 
-        for i, key in enumerate(sensor_list):
+        for i, key in enumerate(sensors):
             list_f = copy.copy(self.P.nodes[part.node]['fitness_list'][key])
             bench = copy.copy(self.dict_benchs_[key]['map_created'])
             pbest = [bench[x_bench][y_bench]]
@@ -558,7 +559,7 @@ class PSOEnvironment(gym.Env):
             self.P.nodes[part.node]['fitness_list'][key] = copy.copy(list_f)
 
         summatory = list()
-        for i, key in enumerate(sensor_list):
+        for i, key in enumerate(sensors):
             w = copy.copy(self.dict_sensors_[key]['w'])
             value = copy.copy(self.P.nodes[part.node]['fitness_list'][key])
             if i == 0:
@@ -580,10 +581,9 @@ class PSOEnvironment(gym.Env):
         list_part = copy.copy(self.P.nodes[part.node]['U_p'])
         list_part.append(np.array(part))
 
-        sensors = self.P.nodes[part.node]['S_p']
-        sensor_list = sensors.keys()
+        sensors = self.P.nodes[part.node]['S_p'].keys()
 
-        for i, key in enumerate(sensor_list):
+        for i, key in enumerate(sensors):
             bench = copy.copy(self.dict_benchs_[key]['map_created'])
             pbest = [bench[x_bench][y_bench]]
             list_f = copy.copy(self.P.nodes[part.node]['fitness_list'][key])
@@ -624,8 +624,7 @@ class PSOEnvironment(gym.Env):
                     gbest_s = gbest_sensor[index_s]
                     gbest_part.append(gbest_s)
                     fitness_part.append(max_fitness_s)
-                max_fitness = max(fitness_part)
-                index = fitness_part.index(max_fitness)
+                index = fitness_part.index(max(fitness_part))
                 self.P.nodes[particle]['D_p']['gbest'] = gbest_part[index]
 
     def global_best_coupled(self):
@@ -636,11 +635,10 @@ class PSOEnvironment(gym.Env):
                 for i, key in enumerate(sensors):
                     usf = copy.copy(self.dict_sensors_[key]['U_sf'])
                     w = copy.copy(self.dict_sensors_[key]['w'])
+                    value = copy.copy(self.dict_sensors_[key]['fitness'])
                     if i == 0:
-                        value = copy.copy(self.dict_sensors_[key]['fitness'])
                         summatory = [data * w for data in value]
                     else:
-                        value = copy.copy(self.dict_sensors_[key]['fitness'])
                         list1 = [data * w for data in value]
                         summatory = list(map(add, summatory, list1))
                 ind = summatory.index(max(summatory))
@@ -697,7 +695,8 @@ class PSOEnvironment(gym.Env):
                 for s, sensor in enumerate(sensors):
                     bench = copy.copy(self.dict_benchs_[sensor]['original'])
                     mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
-                    r2 = r2_score(y_true=bench, y_pred=mu)
+                    # r2 = r2_score(y_true=bench, y_pred=mu)
+                    r2 = mean_squared_error(y_true=bench, y_pred=mu)
                     cant_sensor = self.dict_sensors_[sensor]['cant']
                     w = self.dict_sensors_[sensor]['w']
                     r2_simulation.append(r2)
@@ -772,7 +771,7 @@ class PSOEnvironment(gym.Env):
         self.dist_pre = np.max(self.distances)
         self.n_data = 0
 
-        if np.mean(self.distances) <= 100:
+        if np.mean(self.distances) <= self.exploration_distance:
             action = np.array([2.0187, 0, 3.2697, 0])
         else:
             action = np.array([3.6845, 1.5614, 0, 3.1262])
