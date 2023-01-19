@@ -315,7 +315,7 @@ class Bounds():
         available, x_first, last_y, y_first, x_last, y_last = list(), list(), list(), list(), list(), list()
         confirm = list()
         index, first_y, last_x, all_x, y_last = list(), list(), list(), list(), list()
-        grid = Map(self.xs, self.ys).black_white()
+        grid = self.new_map_scaled()
         bound = True
 
         f, o = True, False

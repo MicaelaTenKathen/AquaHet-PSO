@@ -142,16 +142,18 @@ class Limits:
         if x_int >= self.xs:
             n_pos[0] = self.xs - 1
             x_int = int(n_pos[0])
+        elif x_int <= 0:
+            n_pos[0] = 0
         if y_int >= self.ys:
             n_pos[1] = self.ys - 1
             y_int = (n_pos[1])
+        elif y_int <= 0:
+            y_int = 0
         ch = 0
         if vehicle % 2 == 0:
-            for i in range(len(self.df_bounds)):
-                if int(y_int) == self.df_bounds[i, 2]:
-                    if int(x_int) <= self.df_bounds[i, 0] or int(x_int) >= self.df_bounds[i, 1]:
-                        ch = 1
-                    if ch == 1:
+            for i in range(len(self.df_bounds_x)):
+                if int(y_int) == self.df_bounds_x[i, 2]:
+                    if int(x_int) <= (self.df_bounds_x[i, 0] + 1) or int(x_int) >= (self.df_bounds_x[i, 1] - 1):
                         check = False
                         break
                 else:
@@ -160,8 +162,6 @@ class Limits:
             for i in range(len(df_boundsy)):
                 if int(x_int) == df_boundsy[i, 2]:
                     if int(y_int) <= df_boundsy[i, 0] or int(y_int) >= df_boundsy[i, 1]:
-                        ch = 1
-                    if ch == 1:
                         check = False
                         break
                 else:

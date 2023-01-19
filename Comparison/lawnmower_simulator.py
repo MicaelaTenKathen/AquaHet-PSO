@@ -18,7 +18,8 @@ import math
 import gym
 import copy
 
-class LawnmoverEnvironment():
+
+class LawnmowerEnvironment:
 
     def __init__(self, ys, resolution, vehicles, initial_seed, initial_position, exploration_distance, type_error):
         self.resolution = resolution
@@ -34,7 +35,8 @@ class LawnmoverEnvironment():
         self.grid_or = Map(self.xs, ys).black_white()
 
         self.grid_min, self.grid_max, self.grid_max_x, self.grid_max_y = 0, self.ys, self.xs, self.ys
-        self.df_bounds, self.X_test, self.bench_limits = Bounds(self.resolution, self.xs, self.ys, load_file=False).map_bound()
+        self.df_bounds, self.X_test, self.bench_limits = Bounds(self.resolution, self.xs, self.ys,
+                                                                load_file=False).map_bound()
         self.secure, self.df_bounds = Bounds(self.resolution, self.xs, self.ys).interest_area()
         self.df_bounds_x = Bounds(self.resolution, self.xs, self.ys).bounds_y()
         self.vehicles = vehicles
@@ -180,7 +182,8 @@ class LawnmoverEnvironment():
         if not self.check:
             n_pos = list(map(lambda x, y, z: x * y + z, self.dict_turn["vehicle%s" % vehicle], self.vel,
                              c_pos))
-            self.dict_direction["vehicle%s" % vehicle] = list(map(lambda x, y: x * y, self.dict_direction["vehicle%s" % vehicle], [-1, -1]))
+            self.dict_direction["vehicle%s" % vehicle] = list(
+                map(lambda x, y: x * y, self.dict_direction["vehicle%s" % vehicle], [-1, -1]))
             self.moving_turn(vehicle, dfirst=False)
 
         return n_pos
@@ -349,7 +352,7 @@ class LawnmoverEnvironment():
                 self.error = self.calculate_error()
                 self.error_data.append(self.error)
 
-                #self.save_data()
+                # self.save_data()
 
                 self.ok = False
 

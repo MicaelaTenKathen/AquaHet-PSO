@@ -48,6 +48,8 @@ class PSOEnvironment(gym.Env):
         self.p_vehicles = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
         self.s_sensor = ['s1', 's2', 's3', 's4', 's5']
         self.sensor_v = sensor_vehicle
+        self.subfleet_number = 1
+        self.simulation = 0
         self.P = nx.MultiGraph()
         self.sub_fleets = None
         self.sensor_vehicle = None
@@ -81,12 +83,29 @@ class PSOEnvironment(gym.Env):
         self.method_pso = method_pso
         self.mean_error = list()
         self.conf_error = list()
+        self.mean_mse_error = list()
+        self.conf_mse_error = list()
         self.mean_peak_error = list()
         self.conf_peak_error = list()
         self.sensor = list()
         self.w = list()
         self.cant_sensor = list()
+        self.mse_sensor = list()
+        self.sensor_mse = list()
+        self.w_mse = list()
+        self.cant_sensor_mse = list()
         self.seed_bench = initial_seed
+        self.array_error = list()
+        self.error_subfleet_1 = list()
+        self.error_subfleet_2 = list()
+        self.error_subfleet_3 = list()
+        self.array_r2 = list()
+        self.r2_subfleet_1 = list()
+        self.r2_subfleet_2 = list()
+        self.r2_subfleet_3 = list()
+        self.first_1 = True
+        self.first_2 = True
+        self.first_3 = True
 
         self.dict_sensors_ = {}
         self.dict_benchs_ = {}
@@ -165,10 +184,11 @@ class PSOEnvironment(gym.Env):
     def fleet_configuration(self):
         random.seed(self.seed)
         # self.vehicles = random.randint(2, 8)
-        self.vehicles = 4
+        self.p_vehicles, self.sensor_vehicle = Utils.obtain_prefabricated_vehicles(self.subfleet_number)
+        self.vehicles = len(self.p_vehicles)
         self.population = copy.copy(self.vehicles)
         i = 0
-        sensors = []
+        # sensors = []
         # while i < self.vehicles:
         #     list_s = []
         #     sensor = random.randint(1, 5)
@@ -178,13 +198,13 @@ class PSOEnvironment(gym.Env):
         #     list_s = sorted(list_s)
         #     sensors.append(list_s)
         #     i += 1
-        while i < self.vehicles:
-            number = random.randint(0, 20)
-            # list_s = sorted(self.sensor_v[number])
-            list_s = ['s1']
-            sensors.append(list_s)
-            i += 1
-        self.sensor_vehicle = sensors
+        # while i < self.vehicles:
+        #     number = random.randint(0, 20)
+        #     # list_s = sorted(self.sensor_v[number])
+        #     list_s = ['s1']
+        #     sensors.append(list_s)
+        #     i += 1
+        # self.sensor_vehicle = sensors
         print(self.vehicles, self.sensor_vehicle)
 
     def create_dictionaries(self, sensor):
@@ -317,6 +337,29 @@ class PSOEnvironment(gym.Env):
         Initialization of the pso.
         """
         self.seed += 1
+        self.simulation += 1
+        if self.simulation <= 10:
+            self.subfleet_number = 1
+            if self.first_1:
+                self.array_error = list()
+                self.array_r2 = list()
+                self.first_1 = False
+        elif 10 < self.simulation <= 20:
+            self.subfleet_number = 2
+            if self.first_2:
+                self.error_subfleet_1 = copy.copy(self.array_error)
+                self.array_error = list()
+                self.r2_subfleet_1 = copy.copy(self.array_r2)
+                self.array_r2 = list()
+                self.first_2 = False
+        else:
+            self.subfleet_number = 3
+            if self.first_3:
+                self.error_subfleet_2 = copy.copy(self.array_error)
+                self.array_error = list()
+                self.r2_subfleet_2 = copy.copy(self.array_r2)
+                self.array_r2 = list()
+                self.first_3 = False
         self.fleet_configuration()
         self.reset_variables()
         random.seed(self.seed)
@@ -328,7 +371,6 @@ class PSOEnvironment(gym.Env):
         self.first_values()
 
     def reset_variables(self):
-        self.p_vehicles = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
         self.P = nx.MultiGraph()
         self.sub_fleets = None
         self.dict_sensors_ = {}
@@ -352,11 +394,14 @@ class PSOEnvironment(gym.Env):
         self.bench_function = None
         self.data_particle = ['pbest', 'pbest_fitness', 'gbest', 'un', 'con']
         self.r2_sensor = []
+        self.mse_sensor = []
         self.error_peak_sensor = []
         self.sensor = list()
         self.cant_sensor = list()
         self.w = list()
-
+        self.sensor_mse = list()
+        self.cant_sensor_mse = list()
+        self.w_mse = list()
         self.util = Utils(self.vehicles)
 
     def updateParticle_n(self, p, c1, c2, c3, c4, part):
@@ -370,6 +415,7 @@ class PSOEnvironment(gym.Env):
         gbest = d_p['gbest']
         max_con = d_p['con']
         max_un = d_p['un']
+        # print(pbest, gbest, max_con, max_un)
         if self.behavioral_method == 0:
             u1 = np.array([random.uniform(0, c1) for _ in range(len(part))])
             u2 = np.array([random.uniform(0, c2) for _ in range(len(part))])
@@ -398,8 +444,7 @@ class PSOEnvironment(gym.Env):
     def take_measures(self):
         for i, subfleet in enumerate(self.sub_fleets):
             for p, particle in enumerate(subfleet):
-                sensors = copy.copy(self.P.nodes[particle]['S_p'])
-                sensor_list = sensors.keys()
+                sensors = copy.copy(self.P.nodes[particle]['S_p']).keys()
                 q_p = copy.copy(self.P.nodes[particle]['Q_p'])
                 u_p = copy.copy(self.P.nodes[particle]['U_p'])
                 last = u_p[-1]
@@ -408,13 +453,12 @@ class PSOEnvironment(gym.Env):
                 q_p.append(last)
                 # print('q_p', particle, q_p)
                 self.P.nodes[particle]['Q_p'] = copy.copy(q_p)
-                for j, key in enumerate(sensor_list):
-                    measure = copy.copy(sensors[key])
+                for j, key in enumerate(sensors):
+                    measure = copy.copy(self.P.nodes[particle]['S_p'][key])
                     bench = copy.copy(self.dict_benchs_[key]['map_created'])
                     new_measure = bench[x][y]
                     measure.append(new_measure)
-                    sensors[key] = copy.copy(measure)
-                self.P.nodes[particle]['S_p'] = copy.copy(sensors)
+                    self.P.nodes[particle]['S_p'][key] = copy.copy(measure)
                 # print(sensors)
 
     def gp_update(self):
@@ -485,15 +529,6 @@ class PSOEnvironment(gym.Env):
     def method_coupled(self):
         for i, subfleet in enumerate(self.sub_fleets):
             sensors = self.s_sf[i]
-            max_con = [0, 0]
-            max_un = [0, 0]
-            # for s, sensor in enumerate(sensors):
-            #     max_mu, coord_mu = self.dict_sensors_[sensor]['mu']['max']
-            #     max_sigma, coord_sigma = self.dict_sensors_[sensor]['sigma']['max']
-            #     w_value = self.dict_sensors_[sensor]['w']
-            #     max_con = max_con + w_value * coord_mu
-            #     max_un = max_un + w_value * coord_sigma
-            #     # print('max', max_mu, coord_mu)
             summatory_mu = list()
             summatory_sigma = list()
             for s, sensor in enumerate(sensors):
@@ -513,6 +548,30 @@ class PSOEnvironment(gym.Env):
             ind_mu = summatory_mu.index(max(summatory_mu))
             ind_sigma = summatory_sigma.index(max(summatory_sigma))
             for p, particle in enumerate(subfleet):
+                self.P.nodes[particle]['D_p']['con'] = self.X_test[ind_mu]
+                self.P.nodes[particle]['D_p']['un'] = self.X_test[ind_sigma]
+
+    def method_coupled_sp(self):
+        for i, subfleet in enumerate(self.sub_fleets):
+            sensors = self.s_sf[i]
+            for p, particle in enumerate(subfleet):
+                sensors = self.P.nodes[particle]['S_p'].keys()
+                summatory_mu = list()
+                summatory_sigma = list()
+                for i, sensor in enumerate(sensors):
+                    w_value = copy.copy(self.dict_sensors_[sensor]['w'])
+                    mu = list(copy.copy(self.dict_sensors_[sensor]['mu']['data']))
+                    sigma = list(copy.copy(self.dict_sensors_[sensor]['sigma']['data']))
+                    if i == 0:
+                        summatory_mu = [data_m * w_value for data_m in mu]
+                        summatory_sigma = [data_s * w_value for data_s in sigma]
+                    else:
+                        data_mu = [data_m * w_value for data_m in mu]
+                        data_sigma = [data_s * w_value for data_s in sigma]
+                        summatory_mu = list(map(lambda x, y: x + y, summatory_mu, data_mu))
+                        summatory_sigma = list(map(lambda x, y: x + y, summatory_sigma, data_sigma))
+                ind_mu = summatory_mu.index(max(summatory_mu))
+                ind_sigma = summatory_sigma.index(max(summatory_sigma))
                 self.P.nodes[particle]['D_p']['con'] = self.X_test[ind_mu]
                 self.P.nodes[particle]['D_p']['un'] = self.X_test[ind_sigma]
 
@@ -566,9 +625,9 @@ class PSOEnvironment(gym.Env):
                 summatory = [data * w for data in value]
             else:
                 list1 = [data * w for data in value]
-                summatory = list(map(add, summatory, list1))
+                summatory = list(map(lambda x, y: x + y, summatory, list1))
         ind = summatory.index(max(summatory))
-        self.P.nodes[part.node]['D_p']['pbest'] = list_part[ind]
+        self.P.nodes[part.node]['D_p']['pbest'] = copy.copy(list_part[ind])
         self.P.nodes[part.node]['U_p'] = copy.copy(list_part)
 
     def local_best_decoupled(self, part, dfirst):
@@ -640,7 +699,7 @@ class PSOEnvironment(gym.Env):
                         summatory = [data * w for data in value]
                     else:
                         list1 = [data * w for data in value]
-                        summatory = list(map(add, summatory, list1))
+                        summatory = list(map(lambda x, y: x + y, summatory, list1))
                 ind = summatory.index(max(summatory))
                 self.P.nodes[particle]['D_p']['gbest'] = usf[ind]
 
@@ -688,15 +747,35 @@ class PSOEnvironment(gym.Env):
         self.dict_sensors_[sensor]['mu']['peaks'] = copy.copy(peaks)
 
     def calculate_error(self):
-        if self.type_error == 'all_map':
+        if self.type_error == 'all_map_mse':
+            mse_simulation = []
+            for i, subfleet in enumerate(self.sub_fleets):
+                sensors = self.s_sf[i]
+                for s, sensor in enumerate(sensors):
+                    bench = copy.copy(self.dict_benchs_[sensor]['original'])
+                    mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
+                    mse = mean_squared_error(y_true=bench, y_pred=mu)
+                    cant_sensor = self.dict_sensors_[sensor]['cant']
+                    w = self.dict_sensors_[sensor]['w']
+                    mse_simulation.append(mse)
+                    self.mse_sensor.append(mse)
+                    self.sensor_mse.append(sensor)
+                    self.cant_sensor_mse.append(cant_sensor)
+                    self.w_mse.append(w)
+            mse_simulation = np.array(mse_simulation)
+            mse_mean = np.mean(mse_simulation)
+            mse_std = np.std(mse_simulation)
+            self.mean_mse_error.append(mse_mean)
+            self.array_error.append(mse_mean)
+            self.conf_mse_error.append(mse_std * 1.96)
+        elif self.type_error == 'all_map_r2':
             r2_simulation = []
             for i, subfleet in enumerate(self.sub_fleets):
                 sensors = self.s_sf[i]
                 for s, sensor in enumerate(sensors):
                     bench = copy.copy(self.dict_benchs_[sensor]['original'])
                     mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
-                    # r2 = r2_score(y_true=bench, y_pred=mu)
-                    r2 = mean_squared_error(y_true=bench, y_pred=mu)
+                    r2 = r2_score(y_true=bench, y_pred=mu)
                     cant_sensor = self.dict_sensors_[sensor]['cant']
                     w = self.dict_sensors_[sensor]['w']
                     r2_simulation.append(r2)
@@ -708,6 +787,7 @@ class PSOEnvironment(gym.Env):
             r2_mean = np.mean(r2_simulation)
             r2_std = np.std(r2_simulation)
             self.mean_error.append(r2_mean)
+            self.array_r2.append(r2_mean)
             self.conf_error.append(r2_std * 1.96)
         elif self.type_error == 'peaks':
             error_simulation = []
@@ -761,7 +841,7 @@ class PSOEnvironment(gym.Env):
         self.model_max()
 
         if self.method_pso == 'coupled':
-            self.method_coupled()
+            self.method_coupled_sp()
         elif self.method_pso == 'decoupled':
             self.method_decoupled()
 
@@ -814,7 +894,7 @@ class PSOEnvironment(gym.Env):
                 self.model_max()
 
                 if self.method_pso == 'coupled':
-                    self.method_coupled()
+                    self.method_coupled_sp()
                 elif self.method_pso == 'decoupled':
                     self.method_decoupled()
 
@@ -825,53 +905,75 @@ class PSOEnvironment(gym.Env):
 
         if (np.max(self.distances) >= self.exploitation_distance) or np.max(self.distances) == self.dist_pre:
             done = True
-            self.type_error = 'all_map'
+            self.type_error = 'all_map_r2'
+            self.calculate_error()
+            self.type_error = 'all_map_mse'
             self.calculate_error()
             self.type_error = 'peaks'
             self.calculate_error()
-            df1 = {'Sensor': self.sensor, 'R2_sensor': self.r2_sensor, 'Error_peak_sensor': self.error_peak_sensor, 'Number': self.cant_sensor, 'w': self.w}
+            df1 = {'Sensor': self.sensor, 'R2_sensor': self.r2_sensor, 'MSE_sensor': self.mse_sensor, 'Error_peak_sensor': self.error_peak_sensor,
+                   'Number': self.cant_sensor, 'w': self.w}
             df1 = pd.DataFrame(data=df1)
-            # df2 = {'Sensors': self.sensor_vehicle}
-            # df2 = pd.DataFrame(data=df2)
-            # new = pd.concat([df1, df2], axis=1)
-            df1.to_excel('Sensors_data_' + str(self.seed) + '.xlsx')
-
-            # for i, subfleet in enumerate(self.sub_fleets):
-            #     sensors = self.s_sf[i]
-            #     for s, sensor in enumerate(sensors):
-            #         bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
-            #         self.plot.benchmark(bench, sensor)
-            #         mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
-            #         sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['data'])
-            #         vehicles = copy.copy(self.dict_sensors_[sensor]['vehicles'])
-            #         trajectory = list()
-            #         first = True
-            #         list_ind = list()
-            #         for veh in vehicles:
-            #             list_ind.append(self.P.nodes[veh]['index'])
-            #             if first:
-            #                 trajectory = np.array(self.P.nodes[veh]['U_p'])
-            #                 first = False
-            #             else:
-            #                 new = np.array(self.P.nodes[veh]['U_p'])
-            #                 trajectory = np.concatenate((trajectory, new), axis=1)
-            #         self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
+            df2 = {'Sensors': self.sensor_vehicle}
+            df2 = pd.DataFrame(data=df2)
+            new = pd.concat([df1, df2], axis=1)
+            df1.to_excel('../Test/MC_Sp/T1/Sensors_data_' + str(self.seed) + '.xlsx')
+            if self.simulation == 30:
+                self.error_subfleet_3 = copy.copy(self.array_error)
+                self.r2_subfleet_3 = copy.copy(self.array_r2)
+            # if self.simulation >= 10:
+            #     for i, subfleet in enumerate(self.sub_fleets):
+            #         sensors = self.s_sf[i]
+            #         for s, sensor in enumerate(sensors):
+            #             bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
+            #             self.plot.benchmark(bench, sensor)
+            #             mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
+            #             sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['data'])
+            #             vehicles = copy.copy(self.dict_sensors_[sensor]['vehicles'])
+            #             trajectory = list()
+            #             first = True
+            #             list_ind = list()
+            #             for veh in vehicles:
+            #                 list_ind.append(self.P.nodes[veh]['index'])
+            #                 if first:
+            #                     trajectory = np.array(self.P.nodes[veh]['U_p'])
+            #                     first = False
+            #                 else:
+            #                     new = np.array(self.P.nodes[veh]['U_p'])
+            #                     trajectory = np.concatenate((trajectory, new), axis=1)
+            #             self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
         else:
             done = False
 
         return done
 
     def data_out(self):
+        print(len(self.error_subfleet_1), len(self.error_subfleet_2), len(self.error_subfleet_3))
+        print('MSE 1 Subfleet:', np.mean(np.array(self.error_subfleet_1)), '+-', np.std(np.array(self.error_subfleet_1)) * 1.96)
+        print('R2 1 Subfleet:', np.mean(np.array(self.r2_subfleet_1)), '+-', np.std(np.array(self.r2_subfleet_1)) * 1.96)
+        print('MSE 2 Subfleets:', np.mean(np.array(self.error_subfleet_2)), '+-', np.std(np.array(self.error_subfleet_2)) * 1.96)
+        print('R2 2 Subfleets:', np.mean(np.array(self.r2_subfleet_2)), '+-', np.std(np.array(self.r2_subfleet_2)) * 1.96)
+        print('MSE 3 Subfleets:', np.mean(np.array(self.error_subfleet_3)), '+-', np.std(np.array(self.error_subfleet_3)) * 1.96)
+        print('R2 3 Subfleets:', np.mean(np.array(self.r2_subfleet_3)), '+-', np.std(np.array(self.r2_subfleet_3)) * 1.96)
         data1 = {'R2': self.mean_error, 'Conf_R2': self.conf_error, 'Mean_Error': self.mean_peak_error, 'Conf_Error': self.conf_peak_error}
         df = pd.DataFrame(data=data1)
-        df.to_excel('Main_results.xlsx')
+        df.to_excel('../Test/MC_Sp/T1/Main_results.xlsx')
         fig1, ax1 = plt.subplots()
         ax1.set_title('R2 All Map')
         ax1.boxplot(self.mean_error, notch=True)
         fig2, ax2 = plt.subplots()
         ax2.set_title('Error peaks')
         ax2.boxplot(self.mean_peak_error, notch=True)
+        fig3, ax3 = plt.subplots()
+        ax3.set_title('MSE Subfleet')
+        ax3.boxplot([self.error_subfleet_1, self.error_subfleet_2, self.error_subfleet_3], notch=True)
+        ax3.set_xticklabels(['1 Subfleet', '2 Subfleets', '3 Subfleets'], rotation=45, fontsize=8)
+        fig4, ax4 = plt.subplots()
+        ax4.set_title('R2 Subfleet')
+        ax4.boxplot([self.r2_subfleet_1, self.r2_subfleet_2, self.r2_subfleet_3], notch=True)
+        ax4.set_xticklabels(['1 Subfleet', '2 Subfleets', '3 Subfleets'], rotation=45, fontsize=8)
         plt.show()
 
         print('R2:', np.mean(np.array(self.mean_error)), '+-', np.std(np.array(self.mean_error)) * 1.96)
+        print('MSE:', np.mean(np.array(self.mean_mse_error)), '+-', np.std(np.array(self.mean_mse_error) * 1.96))
         print('Error:', np.mean(np.array(self.mean_peak_error)), '+-', np.std(np.array(self.mean_peak_error)) * 1.96)
