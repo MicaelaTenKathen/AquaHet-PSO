@@ -782,30 +782,32 @@ class LawnmowerEnvironment:
             df2 = {'Sensors': self.sensor_vehicle}
             df2 = pd.DataFrame(data=df2)
             new = pd.concat([df1, df2], axis=1)
-            df1.to_excel('../Test/Lawnmower/T1/Sensors_data_' + str(self.seed) + '.xlsx')
+            df1.to_excel('../Test/Lawnmower/T2/Sensors_data_' + str(self.seed) + '.xlsx')
             if self.simulation == 30:
                 self.error_subfleet_3 = copy.copy(self.array_error)
                 self.r2_subfleet_3 = copy.copy(self.array_r2)
-            # for i, subfleet in enumerate(self.sub_fleets):
-            #     sensors = self.s_sf[i]
-            #     for s, sensor in enumerate(sensors):
-            #         bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
-            #         self.plot.benchmark(bench, sensor)
-            #         mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
-            #         sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['data'])
-            #         vehicles = copy.copy(self.dict_sensors_[sensor]['vehicles'])
-            #         trajectory = list()
-            #         first = True
-            #         list_ind = list()
-            #         for veh in vehicles:
-            #             list_ind.append(self.P.nodes[veh]['index'])
-            #             if first:
-            #                 trajectory = np.array(self.P.nodes[veh]['U_p'])
-            #                 first = False
-            #             else:
-            #                 new = np.array(self.P.nodes[veh]['U_p'])
-            #                 trajectory = np.concatenate((trajectory, new), axis=1)
-            #         self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
+
+            # if self.simulation >= 10:
+            #     for i, subfleet in enumerate(self.sub_fleets):
+            #         sensors = self.s_sf[i]
+            #         for s, sensor in enumerate(sensors):
+            #             bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
+            #             self.plot.benchmark(bench, sensor)
+            #             mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
+            #             sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['data'])
+            #             vehicles = copy.copy(self.dict_sensors_[sensor]['vehicles'])
+            #             trajectory = list()
+            #             first = True
+            #             list_ind = list()
+            #             for veh in vehicles:
+            #                 list_ind.append(self.P.nodes[veh]['index'])
+            #                 if first:
+            #                     trajectory = np.array(self.P.nodes[veh]['U_p'])
+            #                     first = False
+            #                 else:
+            #                     new = np.array(self.P.nodes[veh]['U_p'])
+            #                     trajectory = np.concatenate((trajectory, new), axis=1)
+            #             self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
         else:
             done = False
         return done
@@ -829,7 +831,7 @@ class LawnmowerEnvironment:
               np.std(np.array(self.r2_subfleet_3)) * 1.96)
         data1 = {'R2': self.mean_error, 'Conf_R2': self.conf_error, 'Mean_Error': self.mean_peak_error, 'Conf_Error': self.conf_peak_error}
         df = pd.DataFrame(data=data1)
-        df.to_excel('../Test/Lawnmower/T1/Main_results.xlsx')
+        df.to_excel('../Test/Lawnmower/T2/Main_results.xlsx')
         fig1, ax1 = plt.subplots()
         ax1.set_title('R2 All Map')
         ax1.boxplot(self.mean_error, notch=True)

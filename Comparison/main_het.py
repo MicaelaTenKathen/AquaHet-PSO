@@ -7,7 +7,7 @@ from sklearn.exceptions import ConvergenceWarning
 
 simplefilter("ignore", category=ConvergenceWarning)
 
-from PSO.psonet_function import PSOEnvironment
+from PSO.psohet_function import PSOEnvironment
 import numpy as np
 
 # Configuration
@@ -102,7 +102,7 @@ import matplotlib.pyplot as plt
 error_vec = []
 last_error = []
 
-for i in range(30):
+for i in range(1):
     print(i)
     time_init = time.time()
     done = False

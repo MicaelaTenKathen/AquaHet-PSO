@@ -73,8 +73,8 @@ class Benchmark_function():
               #  self.c.append(5)
             #self.a = np.array(self.a)
             #self.c = np.array(self.c).T
-            num_of_peaks = np.random.RandomState(self.seed).randint(low=1, high=4)
-            #num_of_peaks = 1
+            # num_of_peaks = np.random.RandomState(self.seed).randint(low=1, high=4)
+            num_of_peaks = 2
             #self.a1 = np.random.RandomState(self.seed).random(size=(num_of_peaks, 2))
             #self.a = np.array([[0.5, 0.5], [0.25, 0.25], [0.25, 0.75], [0.9, 0.1]]) * 100
             #print(self.a)
