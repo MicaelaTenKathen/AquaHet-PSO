@@ -136,7 +136,7 @@ class Limits:
     def check_lm_limits(self, n_pos, vehicle):
         with open('../GroundTruth/boundsy.npy'.format(self.file), 'rb') as bn:
             df_boundsy = np.load(bn)
-        check = True
+        check = False
         x_int = n_pos[0]
         y_int = n_pos[1]
         if x_int >= self.xs:
@@ -150,22 +150,15 @@ class Limits:
         elif y_int <= 0:
             y_int = 0
         ch = 0
-        if vehicle % 2 == 0:
-            for i in range(len(self.df_bounds_x)):
-                if int(y_int) == self.df_bounds_x[i, 2]:
-                    if int(x_int) <= (self.df_bounds_x[i, 0] + 1) or int(x_int) >= (self.df_bounds_x[i, 1] - 1):
-                        check = False
-                        break
+        # if vehicle % 2 == 0:
+        for i in range(len(self.df_bounds_x)):
+            if int(y_int) == self.df_bounds_x[i, 2]:
+                if int(x_int) < (self.df_bounds_x[i, 0] + 1) or int(x_int) > (self.df_bounds_x[i, 1] - 1):
+                    check = False
+                    break
                 else:
                     check = True
-        else:
-            for i in range(len(df_boundsy)):
-                if int(x_int) == df_boundsy[i, 2]:
-                    if int(y_int) <= df_boundsy[i, 0] or int(y_int) >= df_boundsy[i, 1]:
-                        check = False
-                        break
-                else:
-                    check = True
+                    break
         return check
 
     def Z_var_mean(self, mu, sigma, X_test, grid):

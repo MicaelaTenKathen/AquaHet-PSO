@@ -3,11 +3,15 @@ import random
 import math
 import gym
 import copy
+import warnings
+from random import shuffle
 
 import openpyxl
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
 from sklearn.metrics import mean_squared_error, r2_score
+from deap import base, creator, tools, algorithms
+from scipy.spatial.distance import euclidean as eu_d
 import networkx as nx
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -40,7 +44,7 @@ class LawnmowerEnvironment:
         self.seed = initial_seed
         self.initial_seed = initial_seed
         self.initial_position = initial_position
-        self.vel = [2, 2]
+        self.vel = [10, 10]
         self.dict_direction = {}
         self.dict_turn = {}
         self.asv = 1
@@ -102,7 +106,8 @@ class LawnmowerEnvironment:
         self.seed = initial_seed
         self.initial_seed = initial_seed
         self.lam = 0.375
-        self.initial_position = initial_position
+        self.positions = initial_position
+        self.initial_position = list()
         self.mean_error = list()
         self.conf_error = list()
         self.mean_mse_error = list()
@@ -333,13 +338,77 @@ class LawnmowerEnvironment:
         self.limits = Limits(self.secure, self.xs, self.ys, self.vehicles)
         random.seed(self.seed)
         self.set_sensor()
+        self.init_positions()
         self.peaks_bench()
         self.first_values()
+
+    def init_positions(self):
+
+        edge_labels = [(u, v, len(d['S_pq'])) for u, v, d in self.P.edges(data=True)]
+
+        def init_shuffle(icls, i_size):
+            ind = list(range(i_size))
+            shuffle(ind)
+            return icls(ind)
+
+        def evaluate_disp(ind):
+            dist = 0
+            for vehi, vehj, w in edge_labels:
+                id_pos_i = ind[index_.index(vehi)]
+                id_pos_j = ind[index_.index(vehj)]
+                dist += w * eu_d(self.positions[id_pos_i], self.positions[id_pos_j])
+            return dist,
+
+        def similar(ind1, ind2):
+            for i in range(len(ind1)):
+                if ind1[i] - ind2[i] != 0:
+                    return False
+            return True
+
+        index_ = list(self.P.nodes)
+        IND_SIZE = len(index_)
+        POP_SIZE = IND_SIZE * 10  # 10
+        CXPB, MUTPB, NGEN = 0.5, 0.5, IND_SIZE * 10
+        indmutpb = 0.05
+        creator.create('FitnessMax', base.Fitness, weights=(1.0,))
+        creator.create('Individual', list, fitness=creator.FitnessMax)
+
+        toolbox = base.Toolbox()
+        toolbox.register("individual", init_shuffle, creator.Individual, i_size=len(index_))
+        toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+
+        toolbox.register("evaluate", evaluate_disp)
+        toolbox.register("mate", tools.cxOrdered)
+        toolbox.register("mutate", tools.mutShuffleIndexes, indpb=indmutpb)
+        toolbox.register("select", tools.selTournament, tournsize=3)
+
+        pop = toolbox.population(POP_SIZE)
+        hof = tools.ParetoFront(similar)
+
+        stats = tools.Statistics(lambda ind: ind.fitness.values)
+        stats.register("avg", np.mean)
+        stats.register("std", np.std)
+        stats.register("min", np.min)
+        stats.register("max", np.max)
+
+        warnings.filterwarnings("ignore")
+        pop, logbook = algorithms.eaMuPlusLambda(pop, toolbox, mu=len(pop), lambda_=len(pop), cxpb=CXPB,
+                                                 mutpb=MUTPB,
+                                                 ngen=NGEN, stats=stats, verbose=True, halloffame=hof)
+
+        dist = 0
+        new_pos = list()
+        for index, posicion in enumerate(hof[0]):
+            print(f'el vehículo {index_[index]}, debe estar en la posición {self.positions[posicion]}')
+            new_pos.append(self.positions[posicion])
+
+        self.initial_position = np.array(new_pos)
 
     def reset_variables(self):
         self.dict_direction = {}
         self.dict_turn = {}
         self.dict_check_turn = {}
+        self.initial_position = list()
         self.asv = 1
         self.check = True
         self.turn = False
@@ -408,38 +477,24 @@ class LawnmowerEnvironment:
 
     def moving_direction(self):
         for i in range(self.vehicles):
-            if i % 2 == 0:
-                if (self.bench_limits_no[1] - self.initial_position[i, 0]) <= (
-                        self.initial_position[i, 0] - self.bench_limits_no[0]):
-                    self.dict_direction["vehicle%s" % i] = [-1, 0]
-                else:
-                    self.dict_direction["vehicle%s" % i] = [1, 0]
+            # if i % 2 == 0:
+            print(type(self.initial_position))
+            if (self.bench_limits_no[1] - self.initial_position[i, 0]) <= (
+                    self.initial_position[i, 0] - self.bench_limits_no[0]):
+                self.dict_direction["vehicle%s" % i] = [-1, 0]
             else:
-                if (self.bench_limits_no[3] - self.initial_position[i, 1]) <= (
-                        self.initial_position[i, 1] - self.bench_limits_no[2]):
-                    self.dict_direction["vehicle%s" % i] = [0, -1]
-                else:
-                    self.dict_direction["vehicle%s" % i] = [0, 1]
+                self.dict_direction["vehicle%s" % i] = [1, 0]
 
     def moving_turn(self, i, dfirst):
         if dfirst:
             self.dict_check_turn["vehicle%s" % i] = False
-            if i % 2 == 0:
-                x_turn = self.dict_direction["vehicle%s" % i][0]
-                if (self.bench_limits_no[3] - self.initial_position[i, 1]) <= (
-                        self.initial_position[i, 1] - self.bench_limits_no[2]):
-                    self.dict_turn["vehicle%s" % i] = [0, -1]
-                else:
-                    self.dict_turn["vehicle%s" % i] = [0, 1]
+            # if i % 2 == 0:
+            x_turn = self.dict_direction["vehicle%s" % i][0]
+            if (self.bench_limits_no[3] - self.initial_position[i, 1]) <= (
+                    self.initial_position[i, 1] - self.bench_limits_no[2]):
+                self.dict_turn["vehicle%s" % i] = [0, -1]
             else:
-                y_turn = self.dict_direction["vehicle%s" % i][1]
-                if (self.bench_limits_no[1] - self.initial_position[i, 0]) <= (
-                        self.initial_position[i, 0] - self.bench_limits_no[0]):
-                    self.dict_turn["vehicle%s" % i] = [-1, 0]
-                else:
-                    self.dict_turn["vehicle%s" % i] = [1, 0]
-        else:
-            self.dict_check_turn["vehicle%s" % i] = True
+                self.dict_turn["vehicle%s" % i] = [0, 1]
 
     def move_vehicle(self, c_pos, vehicle):
         direction = copy.copy(self.dict_direction["vehicle%s" % vehicle])
@@ -788,26 +843,26 @@ class LawnmowerEnvironment:
                 self.r2_subfleet_3 = copy.copy(self.array_r2)
 
             # if self.simulation >= 10:
-            #     for i, subfleet in enumerate(self.sub_fleets):
-            #         sensors = self.s_sf[i]
-            #         for s, sensor in enumerate(sensors):
-            #             bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
-            #             self.plot.benchmark(bench, sensor)
-            #             mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
-            #             sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['data'])
-            #             vehicles = copy.copy(self.dict_sensors_[sensor]['vehicles'])
-            #             trajectory = list()
-            #             first = True
-            #             list_ind = list()
-            #             for veh in vehicles:
-            #                 list_ind.append(self.P.nodes[veh]['index'])
-            #                 if first:
-            #                     trajectory = np.array(self.P.nodes[veh]['U_p'])
-            #                     first = False
-            #                 else:
-            #                     new = np.array(self.P.nodes[veh]['U_p'])
-            #                     trajectory = np.concatenate((trajectory, new), axis=1)
-            #             self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
+            for i, subfleet in enumerate(self.sub_fleets):
+                sensors = self.s_sf[i]
+                for s, sensor in enumerate(sensors):
+                    bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
+                    # self.plot.benchmark(bench, sensor)
+                    mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
+                    sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['data'])
+                    vehicles = copy.copy(self.dict_sensors_[sensor]['vehicles'])
+                    trajectory = list()
+                    first = True
+                    list_ind = list()
+                    for veh in vehicles:
+                        list_ind.append(self.P.nodes[veh]['index'])
+                        if first:
+                            trajectory = np.array(self.P.nodes[veh]['U_p'])
+                            first = False
+                        else:
+                            new = np.array(self.P.nodes[veh]['U_p'])
+                            trajectory = np.concatenate((trajectory, new), axis=1)
+                    self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
         else:
             done = False
         return done
@@ -832,21 +887,21 @@ class LawnmowerEnvironment:
         data1 = {'R2': self.mean_error, 'Conf_R2': self.conf_error, 'Mean_Error': self.mean_peak_error, 'Conf_Error': self.conf_peak_error}
         df = pd.DataFrame(data=data1)
         df.to_excel('../Test/Lawnmower/T2/Main_results.xlsx')
-        fig1, ax1 = plt.subplots()
-        ax1.set_title('R2 All Map')
-        ax1.boxplot(self.mean_error, notch=True)
-        fig2, ax2 = plt.subplots()
-        ax2.set_title('Error peaks')
-        ax2.boxplot(self.mean_peak_error, notch=True)
-        fig3, ax3 = plt.subplots()
-        ax3.set_title('MSE Subfleet')
-        ax3.boxplot([self.error_subfleet_1, self.error_subfleet_2, self.error_subfleet_3], notch=True)
-        ax3.set_xticklabels(['1 Subfleet', '2 Subfleets', '3 Subfleets'], rotation=45, fontsize=8)
-        fig4, ax4 = plt.subplots()
-        ax4.set_title('R2 Subfleet')
-        ax4.boxplot([self.r2_subfleet_1, self.r2_subfleet_2, self.r2_subfleet_3], notch=True)
-        ax4.set_xticklabels(['1 Subfleet', '2 Subfleets', '3 Subfleets'], rotation=45, fontsize=8)
-        plt.show()
+        # fig1, ax1 = plt.subplots()
+        # ax1.set_title('R2 All Map')
+        # ax1.boxplot(self.mean_error, notch=True)
+        # fig2, ax2 = plt.subplots()
+        # ax2.set_title('Error peaks')
+        # ax2.boxplot(self.mean_peak_error, notch=True)
+        # fig3, ax3 = plt.subplots()
+        # ax3.set_title('MSE Subfleet')
+        # ax3.boxplot([self.error_subfleet_1, self.error_subfleet_2, self.error_subfleet_3], notch=True)
+        # ax3.set_xticklabels(['1 Subfleet', '2 Subfleets', '3 Subfleets'], rotation=45, fontsize=8)
+        # fig4, ax4 = plt.subplots()
+        # ax4.set_title('R2 Subfleet')
+        # ax4.boxplot([self.r2_subfleet_1, self.r2_subfleet_2, self.r2_subfleet_3], notch=True)
+        # ax4.set_xticklabels(['1 Subfleet', '2 Subfleets', '3 Subfleets'], rotation=45, fontsize=8)
+        # plt.show()
 
         print('R2:', np.mean(np.array(self.mean_error)), '+-', np.std(np.array(self.mean_error)) * 1.96)
         print('MSE:', np.mean(np.array(self.mean_mse_error)), '+-', np.std(np.array(self.mean_mse_error) * 1.96))
