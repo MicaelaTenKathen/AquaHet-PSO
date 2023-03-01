@@ -8,7 +8,7 @@ class ZonesPeaks():
         self.pirayu_zone = [85, 135]
         self.sanber_zone = [83, 83]
         self.aregua_zone = [23, 83]
-        self.d = 10
+        self.d = 20
 
     def find_zones(self):
         yukyry_index = list()

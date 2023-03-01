@@ -22,7 +22,7 @@ class Plots():
         self.grid_or = Map(self.xs, ys).black_white()
         self.X1 = np.arange(0, self.grid.shape[1], 1)
         self.Y1 = np.arange(0, self.grid.shape[0], 1)
-        self.cmap1 = LinearSegmentedColormap.from_list('name', ['peachpuff', 'tomato', 'maroon'])
+        self.cmap1 = LinearSegmentedColormap.from_list('name', ['red', 'yellow', 'green'])
         self.cmap = LinearSegmentedColormap.from_list('name', ['green', 'yellow', 'red'])
         self.cmap2 = LinearSegmentedColormap.from_list('name', ['red', 'purple'])
         self.cmap3 = LinearSegmentedColormap.from_list('name', ['olive', 'cadetblue'])
@@ -475,12 +475,13 @@ class Plots():
         # plt.savefig("../Image/Contamination/GT3/Ground3.png")
         plt.show()
 
-    def action_areas(self, dict_coord_, dict_impo_, k):
+    def action_areas(self, dict_):
         action_zone = np.zeros([self.grid.shape[0], self.grid.shape[1]])
         j = 0
+        k = dict_['number']
         while j < k:
-            action_coord = list(dict_coord_["action_zone%s" % j])
-            action_impo = list(dict_impo_["action_zone%s" % j])
+            action_coord = list(dict_["action_zone%s" % j]['coord'])
+            action_impo = list(dict_["action_zone%s" % j]['priority'])
             for i in range(len(action_coord)):
                 coord = action_coord[i]
                 x = coord[0]
@@ -489,7 +490,36 @@ class Plots():
             j += 1
         action_zone[self.grid_or == 0] = np.nan
         fig, ax = plt.subplots()
-        im2 = ax.imshow(action_zone.T, interpolation='none', origin='lower', cmap=self.cmap1)
+        im2 = ax.imshow(action_zone.T, interpolation='none', origin='lower', cmap=self.cmap)
+        plt.colorbar(im2, ax=ax, label='Priority', shrink=1.0)
+        ax.set_xlabel("x [m]")
+        ax.set_ylabel("y [m]")
+        ax.set_ylim([self.ys, 0])
+        ax.set_aspect('equal')
+        ax.grid(True)
+        ticks_x = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+        ax.xaxis.set_major_formatter(ticks_x)
+
+        ticks_y = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+        ax.yaxis.set_major_formatter(ticks_y)
+        # plt.savefig("../Image/Contamination/GT3/Ground3.png")
+        plt.show()
+
+    def zones_plot(self, z_, number):
+        action_zone = np.zeros([self.grid.shape[0], self.grid.shape[1]])
+        j = 0
+        while j < number:
+            action_coord = list(z_['zone%s' % j]['coord'])
+            # action_impo = list(np.full((len(z_['zone%s' % j]['coord']), 1), len(z_['zone%s' % j]['zones'])))
+            for i in range(len(action_coord)):
+                coord = action_coord[i]
+                x = coord[0]
+                y = coord[1]
+                action_zone[x, y] = 20 - 3*j
+            j += 1
+        action_zone[self.grid_or == 0] = np.nan
+        fig, ax = plt.subplots()
+        im2 = ax.imshow(action_zone.T, interpolation='none', origin='lower', cmap=self.cmap)
         plt.colorbar(im2, ax=ax, label='Priority', shrink=1.0)
         ax.set_xlabel("x [m]")
         ax.set_ylabel("y [m]")

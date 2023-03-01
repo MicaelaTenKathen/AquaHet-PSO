@@ -93,6 +93,7 @@ class Benchmark_function():
                 #self.a.append(arr)
             random.seed(self.seed)
             zone = random.sample(range(4), num_of_peaks)
+
             for i in range(len(zone)):
                 if zone[i] == 0:
                     id1 = index_a1[i] * len(self.yukyry) - 1
