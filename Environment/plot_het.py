@@ -475,7 +475,7 @@ class Plots():
         # plt.savefig("../Image/Contamination/GT3/Ground3.png")
         plt.show()
 
-    def action_areas(self, dict_):
+    def action_areas(self, dict_, sensor):
         action_zone = np.zeros([self.grid.shape[0], self.grid.shape[1]])
         j = 0
         k = dict_['number']
@@ -496,6 +496,7 @@ class Plots():
         ax.set_ylabel("y [m]")
         ax.set_ylim([self.ys, 0])
         ax.set_aspect('equal')
+        ax.set_title(sensor)
         ax.grid(True)
         ticks_x = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
         ax.xaxis.set_major_formatter(ticks_x)
@@ -516,23 +517,24 @@ class Plots():
                 x = coord[0]
                 y = coord[1]
                 action_zone[x, y] = 20 - 3*j
-            j += 1
-        action_zone[self.grid_or == 0] = np.nan
-        fig, ax = plt.subplots()
-        im2 = ax.imshow(action_zone.T, interpolation='none', origin='lower', cmap=self.cmap)
-        plt.colorbar(im2, ax=ax, label='Priority', shrink=1.0)
-        ax.set_xlabel("x [m]")
-        ax.set_ylabel("y [m]")
-        ax.set_ylim([self.ys, 0])
-        ax.set_aspect('equal')
-        ax.grid(True)
-        ticks_x = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
-        ax.xaxis.set_major_formatter(ticks_x)
+            action_zone[self.grid_or == 0] = np.nan
+            fig, ax = plt.subplots()
+            im2 = ax.imshow(action_zone.T, interpolation='none', origin='lower', cmap=self.cmap)
+            plt.colorbar(im2, ax=ax, label='Priority', shrink=1.0)
+            ax.set_xlabel("x [m]")
+            ax.set_ylabel("y [m]")
+            ax.set_title('Zones')
+            ax.set_ylim([self.ys, 0])
+            ax.set_aspect('equal')
+            ax.grid(True)
+            ticks_x = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+            ax.xaxis.set_major_formatter(ticks_x)
 
-        ticks_y = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
-        ax.yaxis.set_major_formatter(ticks_y)
-        # plt.savefig("../Image/Contamination/GT3/Ground3.png")
-        plt.show()
+            ticks_y = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+            ax.yaxis.set_major_formatter(ticks_y)
+            # plt.savefig("../Image/Contamination/GT3/Ground3.png")
+            plt.show()
+            j += 1
 
     def zoom_outside(self, srcax, roi, dstax, label, color="red", linewidth=2, roiKwargs={}, arrowKwargs={}):
         '''Create a zoomed subplot outside the original subplot

@@ -130,6 +130,8 @@ class LawnmowerEnvironment:
         self.r2_subfleet_1 = list()
         self.r2_subfleet_2 = list()
         self.r2_subfleet_3 = list()
+        self.mean_az_mse = []
+        self.conf_az_mse = []
         self.first_1 = True
         self.first_2 = True
         self.first_3 = True
@@ -236,6 +238,7 @@ class LawnmowerEnvironment:
             'index_peaks'] = Benchmark_function(self.grid_or, self.resolution, self.xs, self.ys, self.X_test,
                                                 self.seed_bench, self.vehicles).create_new_map()
         self.dict_benchs_[sensor]['peaks'] = []
+        self.detect = DetectContaminationAreas(self.X_test)
 
     def peaks_bench(self):
         for i, subfleet in enumerate(self.sub_fleets):
@@ -726,12 +729,14 @@ class LawnmowerEnvironment:
             for i, subfleet in enumerate(self.sub_fleets):
                 sensors = self.s_sf[i]
                 for s, sensor in enumerate(sensors):
+                    self.dict_benchs_[sensor] = self.detect.benchmark_areas(self.dict_benchs_[sensor], self.vehicles,
+                                                                            10)
                     error_peaks = []
-                    self.peaks_mu(sensor)
-                    bench = copy.copy(self.dict_benchs_[sensor]['peaks'])
-                    mu = copy.copy(self.dict_sensors_[sensor]['mu']['peaks'])
-                    for j, be in enumerate(bench):
-                        error_peak = be - mu[j]
+                    index_peaks = self.dict_benchs_[sensor]['action_zones']['peaks_index']
+                    mu_ = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
+                    bench_ = copy.copy(self.dict_benchs_[sensor]['peaks'])
+                    for j, be in enumerate(bench_):
+                        error_peak = be - mu_[index_peaks[j]]
                         error_peaks.append(error_peak)
                     error_peaks = np.array(error_peaks)
                     error_mean_s = np.mean(error_peaks)
@@ -744,6 +749,25 @@ class LawnmowerEnvironment:
             error_conf = np.std(error_simulation)
             self.mean_peak_error.append(error_mean)
             self.conf_peak_error.append(error_conf * 1.96)
+        elif self.type_error == 'zones':
+            zone_error = []
+            for i, subfleet in enumerate(self.sub_fleets):
+                sensors = self.s_sf[i]
+                for s, sensor in enumerate(sensors):
+                    number = self.dict_benchs_[sensor]['action_zones']['number']
+                    estimated_all = list()
+                    real = list()
+                    mu_ = self.dict_sensors_[sensor]['mu']['data']
+                    bench_ = self.dict_benchs_[sensor]['original']
+                    for j in range(number):
+                        bench_ind = self.dict_benchs_[sensor]['action_zones']["action_zone%s" % j]['index']
+                        for k, index in enumerate(bench_ind):
+                            real.append(bench_[index])
+                            estimated_all.append(mu_[index])
+                    mse = mean_squared_error(y_true=real, y_pred=estimated_all)
+                    zone_error.append(mse)
+            self.mean_az_mse.append(np.mean(zone_error))
+            self.conf_az_mse.append(np.std(zone_error) * 1.96)
 
     def first_values(self):
         self.moving_direction()
@@ -830,6 +854,8 @@ class LawnmowerEnvironment:
             self.calculate_error()
             self.type_error = 'peaks'
             self.calculate_error()
+            self.type_error = 'zones'
+            self.calculate_error()
             df1 = {'Sensor': self.sensor, 'R2_sensor': self.r2_sensor, 'MSE_sensor': self.mse_sensor,
                    'Error_peak_sensor': self.error_peak_sensor,
                    'Number': self.cant_sensor, 'w': self.w}
@@ -843,26 +869,26 @@ class LawnmowerEnvironment:
                 self.r2_subfleet_3 = copy.copy(self.array_r2)
 
             # if self.simulation >= 10:
-            for i, subfleet in enumerate(self.sub_fleets):
-                sensors = self.s_sf[i]
-                for s, sensor in enumerate(sensors):
-                    bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
-                    # self.plot.benchmark(bench, sensor)
-                    mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
-                    sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['data'])
-                    vehicles = copy.copy(self.dict_sensors_[sensor]['vehicles'])
-                    trajectory = list()
-                    first = True
-                    list_ind = list()
-                    for veh in vehicles:
-                        list_ind.append(self.P.nodes[veh]['index'])
-                        if first:
-                            trajectory = np.array(self.P.nodes[veh]['U_p'])
-                            first = False
-                        else:
-                            new = np.array(self.P.nodes[veh]['U_p'])
-                            trajectory = np.concatenate((trajectory, new), axis=1)
-                    self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
+            # for i, subfleet in enumerate(self.sub_fleets):
+            #     sensors = self.s_sf[i]
+            #     for s, sensor in enumerate(sensors):
+            #         bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
+            #         # self.plot.benchmark(bench, sensor)
+            #         mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
+            #         sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['data'])
+            #         vehicles = copy.copy(self.dict_sensors_[sensor]['vehicles'])
+            #         trajectory = list()
+            #         first = True
+            #         list_ind = list()
+            #         for veh in vehicles:
+            #             list_ind.append(self.P.nodes[veh]['index'])
+            #             if first:
+            #                 trajectory = np.array(self.P.nodes[veh]['U_p'])
+            #                 first = False
+            #             else:
+            #                 new = np.array(self.P.nodes[veh]['U_p'])
+            #                 trajectory = np.concatenate((trajectory, new), axis=1)
+            #         self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
         else:
             done = False
         return done
@@ -906,3 +932,5 @@ class LawnmowerEnvironment:
         print('R2:', np.mean(np.array(self.mean_error)), '+-', np.std(np.array(self.mean_error)) * 1.96)
         print('MSE:', np.mean(np.array(self.mean_mse_error)), '+-', np.std(np.array(self.mean_mse_error) * 1.96))
         print('Error:', np.mean(np.array(self.mean_peak_error)), '+-', np.std(np.array(self.mean_peak_error)) * 1.96)
+        print('AZ:', np.mean(np.array(self.mean_az_mse)), '+-', np.std(np.array(self.mean_az_mse)) * 1.96)
+

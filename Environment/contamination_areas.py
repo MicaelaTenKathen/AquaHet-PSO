@@ -7,6 +7,7 @@ from scipy.spatial.distance import euclidean as d
 class DetectContaminationAreas():
     def __init__(self, X_test):
         self.coord = copy.copy(X_test)
+        self.X_test = X_test
         self.coord_bench = copy.copy(X_test)
         self.coord_real = copy.copy(X_test)
         self.ava = np.array(X_test)
@@ -191,6 +192,7 @@ class DetectContaminationAreas():
                 break
             cen += 1
         sensor['action_zones']['peaks_coord'] = np.column_stack((array_max_x_bench, array_max_y_bench))
+        peaks_coord = np.column_stack((array_max_x_bench, array_max_y_bench))
         sensor['action_zones']['peaks'] = max_bench_list
         for w in range(len(array_max_x_bench)):
             list_zone_bench = list()
@@ -230,10 +232,19 @@ class DetectContaminationAreas():
                         break
             # dict_bench_["action_zone%s" % j] = list_zone_bench
             # dict_coord_bench["action_zone%s" % j] = list_coord_bench
+            index_peaks = []
+            for p in range(len(peaks_coord)):
+                peak = peaks_coord[p]
+                for k in range(len(self.X_test)):
+                    coord_ = self.X_test[k]
+                    if peak[0] == coord_[0] and peak[1] == coord_[1]:
+                        index_peaks.append(k)
             sensor['action_zones']["action_zone%s" % j] = {}
             sensor['action_zones']["action_zone%s" % j]['number'] = self.action_bench
             sensor['action_zones']["action_zone%s" % j]['index'] = index
             sensor['action_zones']["action_zone%s" % j]['priority'] = list_impo
+            sensor['action_zones']["action_zone%s" % j]['coord'] = array_list_coord
+            sensor['action_zones']['peaks_index'] = index_peaks
             impo -= 10
             self.action_bench += 1
             j += 1
@@ -241,7 +252,7 @@ class DetectContaminationAreas():
         sensor['action_zones']['radio'] = radio
         return sensor
 
-    def overlapping_areas(self, sensors, dict):
+    def overlapping_areas(self, sensors, dict, check):
         sz = 0
         d_ = {}
         z_ = {}
@@ -251,11 +262,20 @@ class DetectContaminationAreas():
             sen = s + 1
             for c, center in enumerate(center1):
                 r1 = dict[sensor]['action_zones']["action_zone%s" % c]['radio']
+                if not check:
+                    sen = s
+                else:
+                    sen = s + 1
                 for e in range(sen, len(sensors)):
                     center2 = dict[sensors[e]]['action_zones']['peaks_coord']
-                    for n, cen in enumerate(center2):
+                    if e == s:
+                        h = c + 1
+                    else:
+                        h = 0
+                    for n in range(h, len(center2)):
                         r2 = dict[sensors[e]]['action_zones']["action_zone%s" % n]['radio']
-                        dist = d(center, cen)
+                        # print(r2)
+                        dist = d(center, center2[n])
                         if dist < (r1 + r2):
                             d_['subzone%s' % sz] = {}
                             d_['subzone%s' % sz]['index'] = np.union1d(
@@ -268,7 +288,7 @@ class DetectContaminationAreas():
                             d_['subzone%s' % sz]['peaks'] = np.union1d(
                                 dict[sensor]['action_zones']["action_zone%s" % c]['center'],
                                 dict[sensors[e]]['action_zones']["action_zone%s" % n]['center'])
-                            print('subzones', d_['subzone%s' % sz]['zones'])
+                            # print('subzones', d_['subzone%s' % sz]['zones'])
                             sz += 1
                             az += 1
         s_ = copy.copy(d_)
@@ -302,13 +322,14 @@ class DetectContaminationAreas():
             if len(sensor) > 0:
                 coord = list()
                 z_['zone%s' % p] = {}
+                z_['zone%s' % p]['number'] = p
                 z_['zone%s' % p]['index'] = s_['subzone%s' % s]['index']
                 z_['zone%s' % p]['act_zones'] = s_['subzone%s' % s]['zones']
-                z_['zone%s' % p]['sensors'] = s_['subzone%s' % s]['sensors']
+                z_['zone%s' % p]['sensors'] = dict.fromkeys(list(s_['subzone%s' % s]['sensors']), [])
                 z_['zone%s' % p]['peaks'] = s_['subzone%s' % s]['peaks']
                 # z_['zone%s' % p]['rad'] = s_['subzone%s' % s]['rad']
                 z_['zone%s' % p]['priority'] = [len(s_['subzone%s' % s]['sensors'])]
-                print(z_['zone%s' % p]['sensors'])
+                # print(z_['zone%s' % p]['sensors'])
                 index = z_['zone%s' % p]['index']
                 for i in range(len(index)):
                     coord.append(self.coord[index[i]])
@@ -327,13 +348,14 @@ class DetectContaminationAreas():
                 if not zon:
                     coord = list()
                     z_['zone%s' % o] = {}
+                    z_['zone%s' % o]['number'] = o
                     z_['zone%s' % o]['index'] = dict[sensor]['action_zones']["action_zone%s" % c]['index']
                     z_['zone%s' % o]['act_zones'] = [dict[sensor]['action_zones']["action_zone%s" % c]['number']]
-                    z_['zone%s' % o]['sensors'] = [sensor]
+                    z_['zone%s' % o]['sensors'] = dict.fromkeys([sensor], [])
                     z_['zone%s' % o]['peaks'] = [dict[sensor]['action_zones']["action_zone%s" % c]['center']]
                     z_['zone%s' % o]['priority'] = [len(sensor)]
                     index = z_['zone%s' % o]['index']
-                    print(z_['zone%s' % o]['sensors'])
+                    # print(z_['zone%s' % o]['sensors'])
                     for i in range(len(index)):
                         coord.append(self.coord[index[i]])
                     z_['zone%s' % o]['coord'] = copy.copy(coord)
@@ -343,14 +365,14 @@ class DetectContaminationAreas():
     def re_overlap(self, z_, no_assigned, dict_, s_sf):
         name = []
         for i in range(len(no_assigned)):
-            print(no_assigned)
+            # print(no_assigned)
             name.append('zone%s' % no_assigned[i])
         for z, nzone in enumerate(name):
             keys = copy.copy(list(z_.keys()))
-            print(keys, 'so', nzone)
+            # print(keys, 'so', nzone)
             keys.remove(nzone)
             data = z_[nzone]['act_zones']
-            print(data)
+            # print(data)
             sensors = []
             number = []
             centers = []
@@ -386,11 +408,11 @@ class DetectContaminationAreas():
                         if min_dist > distance:
                             min_dist = distance
                             coupled = [name[z], centers[t], sensors[t], number[t], key, centers1[c], sensors1[c], number1[c], rad1[c]]
-                print(coupled)
-                new_rad = int(math.floor(min_dist - (coupled[8] - 1)))
+                # print(coupled)
+                new_rad = int(math.floor(min_dist - (coupled[8] - 2)))
                 list_coord = list()
                 list_impo = list()
-                impo = dict_[coupled[2]]['action_zones']['action_zone%s' % coupled[3]]['priority'][0]
+                impo = dict_[coupled[6]]['action_zones']['action_zone%s' % coupled[7]]['priority'][0]
                 center = coupled[1]
                 x = center[0]
                 y = center[1]

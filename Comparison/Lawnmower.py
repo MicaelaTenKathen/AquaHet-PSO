@@ -73,7 +73,7 @@ import matplotlib.pyplot as plt
 error_vec = []
 last_error = []
 
-for i in range(1):
+for i in range(30):
     print(i)
     time_init = time.time()
     done = False
