@@ -244,6 +244,65 @@ class Plots():
 
         plt.show()
 
+    def plot_summatory(self, particle, mu, sigma, part_ant, i, mu_=True):
+        Z_var, Z_mean = self.Z_var_mean(mu, sigma)
+        fig, axs = plt.subplots(1, 1, figsize=(5, 5))
+        initial_x = list()
+        initial_y = list()
+        final_x = list()
+        final_y = list()
+        for i in range(part_ant.shape[1]):
+            if i % 2 == 0:
+                initial_x.append(part_ant[0, i])
+                final_x.append(part_ant[-1, i])
+            else:
+                initial_y.append(part_ant[0, i])
+                final_y.append(part_ant[-1, i])
+
+        vehicles = int(part_ant.shape[1] / 2)
+        self.plot_trajectory_classic(axs, part_ant[:, 0], part_ant[:, 1], colormap=self.colors[i])
+
+        if mu_:
+            axs.plot(initial_x, initial_y, 'o', color='black', markersize=3, label='ASVs initial positions')
+            axs.plot(final_x, final_y, 'X', color='red', markersize=3, label='ASVs final positions')
+            axs.legend(loc=3, fontsize=6)
+
+            im2 = axs.imshow(Z_mean.T, interpolation='bilinear', origin='lower', cmap=self.cmapmean)
+            plt.colorbar(im2, ax=axs, label='σ', shrink=1.0)
+            # axs[0].set_xlabel("x [m]")
+            axs.set_ylabel("y [m]")
+            axs.set_yticks([0, 20, 40, 60, 80, 100, 120, 140])
+            axs.set_xticks([0, 50, 100])
+            axs.set_aspect('equal')
+            axs.set_ylim([self.ys, 0])
+            axs.set_title(particle)
+            axs.grid(True)
+            ticks_x = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+            axs.xaxis.set_major_formatter(ticks_x)
+
+            ticks_y = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+            axs.yaxis.set_major_formatter(ticks_y)
+        else:
+            axs.plot(initial_x, initial_y, 'o', color='black', markersize=3, label='ASVs initial positions')
+            axs.plot(final_x, final_y, 'X', color='red', markersize=3, label='ASVs final positions')
+            axs.legend(loc=3, fontsize=6)
+
+            im2 = axs.imshow(Z_var.T, interpolation='bilinear', origin='lower', cmap="gist_yarg", vmin=0, vmax=1.0)
+            plt.colorbar(im2, ax=axs, label='σ', shrink=1.0)
+            # axs[0].set_xlabel("x [m]")
+            axs.set_ylabel("y [m]")
+            axs.set_yticks([0, 20, 40, 60, 80, 100, 120, 140])
+            axs.set_xticks([0, 50, 100])
+            axs.set_aspect('equal')
+            axs.set_ylim([self.ys, 0])
+            axs.grid(True)
+            axs.set_title(particle)
+            ticks_x = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+            axs.xaxis.set_major_formatter(ticks_x)
+
+            ticks_y = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+            axs.yaxis.set_major_formatter(ticks_y)
+
     def plot_classic(self, mu, sigma, part_ant, sensor, list_ind):
         Z_var, Z_mean = self.Z_var_mean(mu, sigma)
         fig, axs = plt.subplots(2, 1, figsize=(5, 10))

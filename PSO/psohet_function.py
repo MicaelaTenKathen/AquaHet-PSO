@@ -140,6 +140,7 @@ class PSOEnvironment(gym.Env):
         self.r2_sensor = []
         self.error_peak_sensor = []
         self.explore = True
+        self.summatory = []
 
         if self.method == 0:
             self.state = None
@@ -594,31 +595,25 @@ class PSOEnvironment(gym.Env):
                     'data'] = self.gpr.predict(self.X_test, return_std=True)
                 self.post_array.append(round(np.min(np.exp(self.gpr.kernel_.theta[0])), 1))
 
-    def obtain_max(self, array_function):
+    def obtain_max(self, array_function, coord):
         max_value = np.max(array_function)
         index_1 = np.where(array_function == max_value)
         index_x1 = index_1[0]
 
         index_x2 = index_x1[0]
-        index_x = int(self.X_test[index_x2][0])
-        index_y = int(self.X_test[index_x2][1])
+        index_x = int(coord[index_x2][0])
+        index_y = int(coord[index_x2][1])
 
         index_xy = [index_x, index_y]
         coordinate_max = np.array(index_xy)
 
         return max_value, coordinate_max
 
-    def model_max(self):
-        for i, sub_fleet in enumerate(self.sub_fleets):
-            sensors_key = self.s_sf[i]
-            for s, sensor in enumerate(sensors_key):
-                mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
-                sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['data'])
-                max_mu, coord_mu = self.obtain_max(mu)
-                self.dict_sensors_[sensor]['mu']['max'] = [max_mu, coord_mu]
-                max_sigma, coord_sigma = self.obtain_max(sigma)
-                self.dict_sensors_[sensor]['sigma']['max'] = [max_sigma, coord_sigma]
-                # print('max_mu', max_mu, 'max_sigma', max_sigma)
+    def model_max(self, mu, sigma, coord):
+        max_mu, coord_mu = self.obtain_max(mu, coord)
+        max_sigma, coord_sigma = self.obtain_max(sigma, coord)
+        # print('max_mu', max_mu, 'max_sigma', max_sigma)
+        return [max_mu, coord_mu], [max_sigma, coord_sigma]
 
     def w_values(self):
         for s in range(len(self.s_sf)):
@@ -709,10 +704,14 @@ class PSOEnvironment(gym.Env):
                         data_sigma = [data_s * w_value for data_s in sigma]
                         summatory_mu = list(map(lambda x, y: x + y, summatory_mu, data_mu))
                         summatory_sigma = list(map(lambda x, y: x + y, summatory_sigma, data_sigma))
+                        self.summatory = copy.copy(summatory_sigma)
                 ind_mu = summatory_mu.index(max(summatory_mu))
                 ind_sigma = summatory_sigma.index(max(summatory_sigma))
                 self.P.nodes[particle]['D_p']['con'] = self.X_test[ind_mu]
                 self.P.nodes[particle]['D_p']['un'] = self.X_test[ind_sigma]
+                # if np.mean(self.distances) > self.exploration_distance - 10 and self.simulation > 10:
+                #     self.plot.plot_summatory(particle, summatory_mu, summatory_sigma, np.array(self.P.nodes[particle]['U_p']), self.P.nodes[particle]['index'], mu_=False)
+                #     self.plot.plot_summatory(particle, summatory_mu, summatory_sigma, np.array(self.P.nodes[particle]['U_p']), self.P.nodes[particle]['index'], mu_=True)
 
     def method_decoupled(self):
         for i, subfleet in enumerate(self.sub_fleets):
@@ -722,6 +721,9 @@ class PSOEnvironment(gym.Env):
             max_con = []
             max_un = []
             for s, sensor in enumerate(sensors):
+                self.dict_sensors_[sensor]['mu']['max'], self.dict_sensors_[sensor]['sigma'][
+                    'max'] = self.model_max(self.dict_sensors_[sensor]['mu']['data'],
+                                            self.dict_sensors_[sensor]['sigma']['data'], self.X_test)
                 max_mu, coord_mu = copy.copy(self.dict_sensors_[sensor]['mu']['max'])
                 max_sigma, coord_sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['max'])
                 if s == 0:
@@ -747,6 +749,9 @@ class PSOEnvironment(gym.Env):
                 max_un = []
                 p_sensor = self.P.nodes[particle]['S_p'].keys()
                 for s, sensor in enumerate(p_sensor):
+                    self.dict_sensors_[sensor]['mu']['max'], self.dict_sensors_[sensor]['sigma'][
+                        'max'] = self.model_max(self.dict_sensors_[sensor]['mu']['data'],
+                                                self.dict_sensors_[sensor]['sigma']['data'], self.X_test)
                     max_mu, coord_mu = list(copy.copy(self.dict_sensors_[sensor]['mu']['max']))
                     max_sigma, coord_sigma = list(copy.copy(self.dict_sensors_[sensor]['sigma']['max']))
                     if s == 0:
@@ -763,7 +768,7 @@ class PSOEnvironment(gym.Env):
                 self.P.nodes[particle]['D_p']['con'] = max_con
                 self.P.nodes[particle]['D_p']['un'] = max_un
 
-    def local_best_coupled(self, part):
+    def local_best_coupled(self, part, dfirst=False):
         part, self.s_n = Limits(self.secure, self.xs, self.ys, self.vehicles).new_limit(self.g, part, self.s_n,
                                                                                         self.n_data,
                                                                                         self.s_ant, self.part_ant)
@@ -774,12 +779,17 @@ class PSOEnvironment(gym.Env):
         list_part.append(np.array(part))
 
         sensors = self.P.nodes[part.node]['S_p'].keys()
+        index = 0
+        for c in range(len(self.X_test)):
+            coord_ = self.X_test[c]
+            if x_bench == coord_[0] and y_bench == coord_[1]:
+                index = c
+                break
 
         for i, key in enumerate(sensors):
             list_f = copy.copy(self.P.nodes[part.node]['fitness_list'][key])
-            bench = copy.copy(self.dict_benchs_[key]['map_created'])
-            pbest = [bench[x_bench][y_bench]]
-            list_f.append(pbest[0])
+            bench = list(copy.copy(self.dict_sensors_[key]['mu']['data']))
+            list_f.append(bench[index])
             self.P.nodes[part.node]['fitness_list'][key] = copy.copy(list_f)
 
         summatory = list()
@@ -807,11 +817,17 @@ class PSOEnvironment(gym.Env):
 
         sensors = self.P.nodes[part.node]['S_p'].keys()
 
+        for c in range(len(self.X_test)):
+            coord_ = self.X_test[c]
+            if x_bench == coord_[0] and y_bench == coord_[1]:
+                index = c
+                # print(index)
+                break
+
         for i, key in enumerate(sensors):
-            bench = copy.copy(self.dict_benchs_[key]['map_created'])
-            pbest = [bench[x_bench][y_bench]]
             list_f = copy.copy(self.P.nodes[part.node]['fitness_list'][key])
-            list_f.append(pbest[0])
+            bench = copy.copy(self.dict_sensors_[key]['mu']['data'])
+            list_f.append(bench[index])
             self.P.nodes[part.node]['fitness_list'][key] = copy.copy(list_f)
 
             if i == 0:
@@ -823,19 +839,7 @@ class PSOEnvironment(gym.Env):
                     fitness = max(list_f)
                     ind = list_f.index(fitness)
                     coord_pbest = list_part[ind]
-            # if dfirst:
-            #     self.P.nodes[part.node]['pbest'][key] = part
-            #     self.P.nodes[part.node]['fitness'][key] = pbest
-            # else:
-            #     pbest_fitness = self.P.nodes[part.node]['fitness'][key]
-            #     if pbest_fitness < pbest:
-            #         self.P.nodes[part.node]['pbest'][key] = part
-            #         self.P.nodes[part.node]['fitness'][key] = pbest
-
-        # key_max = max(self.P.nodes[part.node]['fitness'].items(), key=operator.itemgetter(1))[0]
-        # self.P.nodes[part.node]['D_p']['pbest'] = self.P.nodes[part.node]['pbest'][key_max]
         self.P.nodes[part.node]['D_p']['pbest'] = coord_pbest
-
         self.P.nodes[part.node]['U_p'] = copy.copy(list_part)
 
     def global_best_decoupled(self):
@@ -844,31 +848,22 @@ class PSOEnvironment(gym.Env):
             for s, sensor in enumerate(sensors):
                 usf = copy.copy(self.dict_sensors_[sensor]['U_sf'])
                 value = copy.copy(self.dict_sensors_[sensor]['fitness'])
-                for p, particle in enumerate(subfleet):
-                    t = 0
-                    gbest_part = list()
-                    fitness_part = list()
-                    p_sensor = self.P.nodes[particle]['S_p'].keys()
-                    for j, key in enumerate(p_sensor):
-                        if sensor == key:
-                            if t == 0:
-                                fitness = max(value)
-                                ind = value.index(fitness)
-                                coord_gbest = usf[ind]
-                                t += 1
-                            else:
-                                if max(value) > fitness:
-                                    fitness = max(value)
-                                    ind = value.index(fitness)
-                                    coord_gbest = usf[ind]
-                    self.P.nodes[particle]['D_p']['gbest'] = coord_gbest
+                if s == 0:
+                    fitness = max(value)
+                    ind = value.index(fitness)
+                    coord_gbest = usf[ind]
+                else:
+                    if max(value) > fitness:
+                        fitness = max(value)
+                        ind = value.index(fitness)
+                        coord_gbest = usf[ind]
+            for p, particle in enumerate(subfleet):
+                self.P.nodes[particle]['D_p']['gbest'] = coord_gbest
 
     def global_best_coupled(self):
         for i, subfleet in enumerate(self.sub_fleets):
-            # for p, particle in enumerate(subfleet):
             sensors = self.s_sf[i]
             summatory = list()
-
             for j, key in enumerate(sensors):
                 usf = copy.copy(self.dict_sensors_[key]['U_sf'])
                 w = copy.copy(self.dict_sensors_[key]['w'])
@@ -881,16 +876,6 @@ class PSOEnvironment(gym.Env):
             ind = summatory.index(max(summatory))
             for p, particle in enumerate(subfleet):
                 self.P.nodes[particle]['D_p']['gbest'] = usf[ind]
-
-            #     if p == 0:
-            #         new_gbest = copy.copy(self.P.nodes[particle]['D_p']['pbest_fitness'])
-            #         coord_gbest = copy.copy(self.P.nodes[particle]['D_p']['pbest'])
-            #     else:
-            #         if new_gbest < self.P.nodes[particle]['D_p']['pbest_fitness']:
-            #             new_gbest = copy.copy(self.P.nodes[particle]['D_p']['pbest_fitness'])
-            #             coord_gbest = copy.copy(self.P.nodes[particle]['D_p']['pbest'])
-            # for p, particle in enumerate(subfleet):
-            #     self.P.nodes[particle]['D_p']['gbest'] = coord_gbest
 
     def u_sf(self):
         for i, subfleet in enumerate(self.sub_fleets):
@@ -1081,14 +1066,6 @@ class PSOEnvironment(gym.Env):
             else:
                 zone['sensors'][sensor]['w'] = x_value / zone['sensors'][sensor]['cant']
                 zone['sensors'][sensor]['w_init'] = x_value / zone['sensors'][sensor]['cant']
-        # for j, sensor in enumerate(s_sf):
-        #     s_z = False
-        #     for t, key in enumerate(sensors):
-        #         if sensor == key:
-        #             s_z = True
-        #     if not s_z:
-        #         zone['sensors'][sensor] = {}
-        #         zone['sensors'][sensor]['w'] = 0
 
     def local_best_coupled_exploit(self, part):
         part, self.s_n = Limits(self.secure, self.xs, self.ys, self.vehicles).new_limit(self.g, part, self.s_n,
@@ -1152,21 +1129,75 @@ class PSOEnvironment(gym.Env):
         self.P.nodes[part.node]['U_p'] = copy.copy(listpart)
         self.P.nodes[part.node]['Up_exploit'] = copy.copy(list_part)
 
+    def local_best_decoupled_exploit(self, part, dfirst):
+        part, self.s_n = Limits(self.secure, self.xs, self.ys, self.vehicles).new_limit(self.g, part, self.s_n,
+                                                                                        self.n_data,
+                                                                                        self.s_ant, self.part_ant)
+        x_bench = int(part[0])
+        y_bench = int(part[1])
+
+        list_part = copy.copy(self.P.nodes[part.node]['Up_exploit'])
+        listpart = copy.copy(self.P.nodes[part.node]['U_p'])
+        list_part.append(np.array(part))
+        listpart.append(np.array(part))
+
+        s_p = self.P.nodes[part.node]['S_p'].keys()
+        subfleet = self.P.nodes[part.node]['Subfleet']
+        zone = self.P.nodes[part.node]['Zone']
+        s_n = self.z_['subfleet%s' % subfleet][zone]['sensors'].keys()
+        coord_zone = self.z_['subfleet%s' % subfleet][zone]['coord']
+
+        for c in range(len(self.X_test)):
+            coord_ = self.X_test[c]
+            if x_bench == coord_[0] and y_bench == coord_[1]:
+                index = c
+                # print(index)
+                break
+
+        for t, coo in enumerate(coord_zone):
+            if coo[0] == x_bench and coo[1] == y_bench:
+                reach = True
+                break
+            else:
+                reach = False
+
+        self.P.nodes[part.node]['Reach'] = reach
+
+        t = 0
+        for i, key in enumerate(s_p):
+            for j, sensor in enumerate(s_n):
+                if key == sensor:
+                    list_f = copy.copy(self.P.nodes[part.node]['fitness_exploit'][key])
+                    bench = copy.copy(self.z_['subfleet%s' % subfleet][zone]['sensors'][key]['mu']['data'])
+                    list_f.append(bench[index])
+                    self.P.nodes[part.node]['fitness_exploit'][key] = copy.copy(list_f)
+                    if t == 0:
+                        fitness = max(list_f)
+                        ind = list_f.index(fitness)
+                        coord_pbest = list_part[ind]
+                        t += 1
+                    else:
+                        if max(list_f) > fitness:
+                            fitness = max(list_f)
+                            ind = list_f.index(fitness)
+                            coord_pbest = list_part[ind]
+        self.P.nodes[part.node]['D_p']['pbest'] = coord_pbest
+        self.P.nodes[part.node]['U_p'] = copy.copy(listpart)
+        self.P.nodes[part.node]['Up_exploit'] = copy.copy(list_part)
+
     def global_best_coupled_exploit(self):
         for i, subfleet in enumerate(self.sub_fleets):
             for j, zo in enumerate(self.z_['subfleet%s' % i].keys()):
                 zone = self.z_['subfleet%s' % i][zo]
                 vehicles = zone['vehicles']
                 sensors = zone['sensors'].keys()
-                t = 0
                 summatory = []
                 for s, sensor in enumerate(sensors):
                     usf = copy.copy(zone['sensors'][sensor]['u_sf'])
                     w = copy.copy(zone['sensors'][sensor]['w'])
                     value = copy.copy(zone['sensors'][sensor]['fitness'])
-                    if t == 0:
+                    if s == 0:
                         summatory = [data * w for data in value]
-                        t += 1
                     else:
                         list1 = [data * w for data in value]
                         summatory = list(map(lambda x, y: x + y, summatory, list1))
@@ -1176,30 +1207,26 @@ class PSOEnvironment(gym.Env):
 
     def global_best_decoupled_exploit(self):
         for i, subfleet in enumerate(self.sub_fleets):
-            sensors = self.s_sf[i]
-            for s, sensor in enumerate(sensors):
-                usf = copy.copy(self.dict_sensors_[sensor]['U_sf'])
-                value = copy.copy(self.dict_sensors_[sensor]['fitness'])
-                for p, particle in enumerate(subfleet):
-                    t = 0
-                    gbest_part = list()
-                    fitness_part = list()
-                    p_sensor = self.P.nodes[particle]['S_p'].keys()
-                    for j, key in enumerate(p_sensor):
-                        if sensor == key:
-                            if t == 0:
-                                fitness = max(value)
-                                ind = value.index(fitness)
-                                coord_gbest = usf[ind]
-                                t += 1
-                            else:
-                                if max(value) > fitness:
-                                    fitness = max(value)
-                                    ind = value.index(fitness)
-                                    coord_gbest = usf[ind]
+            for j, zo in enumerate(self.z_['subfleet%s' % i].keys()):
+                zone = self.z_['subfleet%s' % i][zo]
+                vehicles = zone['vehicles']
+                sensors = zone['sensors'].keys()
+                for s, sensor in enumerate(sensors):
+                    usf = copy.copy(zone['sensors'][sensor]['u_sf'])
+                    value = copy.copy(zone['sensors'][sensor]['fitness'])
+                    if s == 0:
+                        fitness = max(value)
+                        ind = value.index(fitness)
+                        coord_gbest = usf[ind]
+                    else:
+                        if max(value) > fitness:
+                            fitness = max(value)
+                            ind = value.index(fitness)
+                            coord_gbest = usf[ind]
+                for p, particle in enumerate(vehicles):
                     self.P.nodes[particle]['D_p']['gbest'] = coord_gbest
 
-    def method_coupled_sp_exploit(self):
+    def method_coupled_exploit(self):
         for i, subfleet in enumerate(self.sub_fleets):
             for j, zo in enumerate(self.z_['subfleet%s' % i].keys()):
                 zone = self.z_['subfleet%s' % i][zo]
@@ -1230,6 +1257,42 @@ class PSOEnvironment(gym.Env):
                     ind_sigma = summatory_sigma.index(max(summatory_sigma))
                     self.P.nodes[particle]['D_p']['con'] = coord[ind_mu]
                     self.P.nodes[particle]['D_p']['un'] = coord[ind_sigma]
+
+    def method_decoupled_exploit(self):
+        for i, subfleet in enumerate(self.sub_fleets):
+            for j, zo in enumerate(self.z_['subfleet%s' % i].keys()):
+                zone = self.z_['subfleet%s' % i][zo]
+                vehicles = zone['vehicles']
+                sensors = zone['sensors'].keys()
+                coord = zone['coord']
+                for r, sn in enumerate(sensors):
+                    zone['sensors'][sn]['mu']['max'], zone['sensors'][sn]['sigma'][
+                        'max'] = self.model_max(
+                        zone['sensors'][sn]['mu']['zone'], zone['sensors'][sn]['sigma']['zone'], coord)
+                for p, particle in enumerate(vehicles):
+                    t = 0
+                    s_p = self.P.nodes[particle]['S_p'].keys()
+                    max_con_value = 0
+                    max_un_value = 0
+                    max_con = []
+                    max_un = []
+                    for h, sensor in enumerate(s_p):
+                        for k, key in enumerate(sensors):
+                            if sensor == key:
+                                max_mu, coord_mu = list(copy.copy(zone['sensors'][sensor]['mu']['max']))
+                                max_sigma, coord_sigma = list(copy.copy(zone['sensors'][sensor]['sigma']['max']))
+                                if t == 0:
+                                    max_con = coord_mu
+                                    max_con_value = max_mu
+                                    max_un = coord_sigma
+                                    max_un_value = max_sigma
+                                else:
+                                    if max_con_value < max_mu:
+                                        max_con = coord_mu
+                                    if max_un_value < max_sigma:
+                                        max_un = coord_sigma
+                    self.P.nodes[particle]['D_p']['con'] = max_con
+                    self.P.nodes[particle]['D_p']['un'] = max_un
 
     def check_vehicles(self, i, subfleet):
         repeat = False
@@ -1366,11 +1429,6 @@ class PSOEnvironment(gym.Env):
                     available_zones = copy.copy(list(self.z_['subfleet%s' % i].keys()))
                     repeat = True
             no_assigned = []
-            # if len(available_zones) > 0:
-            #     for b, zac in enumerate(available_zones):
-            #         no_assigned.append(self.z_['subfleet%s' % i][zac]['number'])
-            #     assigned = False
-            #     check = False
             for b, za in enumerate(list(self.z_['subfleet%s' % i].keys())):
                 print(za, ':', self.z_['subfleet%s' % i][za]['vehicles'])
                 if len(self.z_['subfleet%s' % i][za]['vehicles']) == 0:
@@ -1382,30 +1440,28 @@ class PSOEnvironment(gym.Env):
                 assigned = True
         return check, no_assigned, assigned
 
-    # def obtain_final_model(self):
-
     def obtain_zones(self):
-        # if self.simulation > 0:
-        #     for i, subfleet in enumerate(self.sub_fleets):
-        #         sensors = self.s_sf[i]
-        #         for s, sensor in enumerate(sensors):
-        #             bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
-        #             self.plot.benchmark(bench, sensor)
-        #             mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
-        #             sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['data'])
-        #             vehicles = copy.copy(self.dict_sensors_[sensor]['vehicles'])
-        #             trajectory = list()
-        #             first = True
-        #             list_ind = list()
-        #             for veh in vehicles:
-        #                 list_ind.append(self.P.nodes[veh]['index'])
-        #                 if first:
-        #                     trajectory = np.array(self.P.nodes[veh]['U_p'])
-        #                     first = False
-        #                 else:
-        #                     new = np.array(self.P.nodes[veh]['U_p'])
-        #                     trajectory = np.concatenate((trajectory, new), axis=1)
-        #             self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
+        if self.simulation > 10:
+            for i, subfleet in enumerate(self.sub_fleets):
+                sensors = self.s_sf[i]
+                for s, sensor in enumerate(sensors):
+                    bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
+                    self.plot.benchmark(bench, sensor)
+                    mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
+                    sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['data'])
+                    vehicles = copy.copy(self.dict_sensors_[sensor]['vehicles'])
+                    trajectory = list()
+                    first = True
+                    list_ind = list()
+                    for veh in vehicles:
+                        list_ind.append(self.P.nodes[veh]['index'])
+                        if first:
+                            trajectory = np.array(self.P.nodes[veh]['U_p'])
+                            first = False
+                        else:
+                            new = np.array(self.P.nodes[veh]['U_p'])
+                            trajectory = np.concatenate((trajectory, new), axis=1)
+                    self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
         for i, subfleet in enumerate(self.sub_fleets):
             sensors = self.s_sf[i]
             for s, sensor in enumerate(sensors):
@@ -1539,18 +1595,6 @@ class PSOEnvironment(gym.Env):
             self.conf_az_mse.append(np.std(zone_error) * 1.96)
 
     def first_values(self):
-        for part in self.pop:
-            if self.method_pso == 'coupled':
-                self.local_best_coupled(part)
-            elif self.method_pso == 'decoupled':
-                self.local_best_decoupled(part, dfirst=True)
-
-        self.u_sf()
-
-        if self.method_pso == 'coupled':
-            self.global_best_coupled()
-        elif self.method_pso == 'decoupled':
-            self.global_best_decoupled()
 
         for part in self.pop:
             self.part_ant, self.distances = self.util.distance_part(self.g, self.n_data, part, self.part_ant,
@@ -1563,13 +1607,25 @@ class PSOEnvironment(gym.Env):
         self.take_measures()
         self.gp_update()
 
+        for part in self.pop:
+            if self.method_pso == 'coupled':
+                self.local_best_coupled(part, dfirst=True)
+            elif self.method_pso == 'decoupled':
+                self.local_best_decoupled(part, dfirst=True)
+
+        self.u_sf()
+
         if self.method_pso == 'coupled':
-            # self.method_coupled()
+            self.global_best_coupled()
+        elif self.method_pso == 'decoupled':
+            self.global_best_decoupled()
+
+        if self.method_pso == 'coupled':
+            #self.method_coupled()
             self.method_coupled_sp()
         elif self.method_pso == 'decoupled':
-            self.model_max()
             self.method_decoupled()
-            # self.method_decoupled_sp()
+            #self.method_decoupled_sp()
 
     def step_explore(self, action):
         dis_steps = 0
@@ -1614,12 +1670,11 @@ class PSOEnvironment(gym.Env):
                 self.gp_update()
 
                 if self.method_pso == 'coupled':
-                    # self.method_coupled()
+                    #self.method_coupled()
                     self.method_coupled_sp()
                 elif self.method_pso == 'decoupled':
-                    self.model_max()
-                    # self.method_decoupled()
-                    self.method_decoupled_sp()
+                    self.method_decoupled()
+                    #self.method_decoupled_sp()
 
             dis_steps = np.mean(self.distances) - dist_ant
             if np.max(self.distances) == previous_dist:
@@ -1655,7 +1710,7 @@ class PSOEnvironment(gym.Env):
                 if self.method_pso == 'coupled':
                     self.local_best_coupled_exploit(part)
                 elif self.method_pso == 'decoupled':
-                    self.local_best_decoupled(part, dfirst=False)
+                    self.local_best_decoupled_exploit(part, dfirst=False)
 
                 self.n_data += 1
                 if self.n_data > self.vehicles - 1:
@@ -1666,7 +1721,7 @@ class PSOEnvironment(gym.Env):
             if self.method_pso == 'coupled':
                 self.global_best_coupled_exploit()
             elif self.method_pso == 'decoupled':
-                self.global_best_decoupled()
+                self.global_best_decoupled_exploit()
 
             for part in self.pop:
                 self.part_ant, self.distances = self.util.distance_part(self.g, self.n_data, part, self.part_ant,
@@ -1681,12 +1736,9 @@ class PSOEnvironment(gym.Env):
                 self.gp_update_exploit()
 
                 if self.method_pso == 'coupled':
-                    self.method_coupled_sp_exploit()
-                    # self.method_coupled_sp()
+                    self.method_coupled_exploit()
                 elif self.method_pso == 'decoupled':
-                    self.model_max()
-                    # self.method_decoupled()
-                    self.method_decoupled_sp()
+                    self.method_decoupled_exploit()
 
             dis_steps = np.mean(self.distances) - dist_ant
             if np.max(self.distances) == previous_dist:
@@ -1736,12 +1788,12 @@ class PSOEnvironment(gym.Env):
             if self.simulation == 30:
                 self.error_subfleet_3 = copy.copy(self.array_error)
                 self.r2_subfleet_3 = copy.copy(self.array_r2)
-            # if self.simulation > 0:
+            # if self.simulation > 10:
             #     for i, subfleet in enumerate(self.sub_fleets):
             #         sensors = self.s_sf[i]
             #         for s, sensor in enumerate(sensors):
-            #             bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
-            #             self.plot.benchmark(bench, sensor)
+            #             # bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
+            #             # self.plot.benchmark(bench, sensor)
             #             mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
             #             sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['data'])
             #             vehicles = copy.copy(self.dict_sensors_[sensor]['vehicles'])
