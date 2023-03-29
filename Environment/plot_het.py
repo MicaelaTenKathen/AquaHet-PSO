@@ -244,6 +244,15 @@ class Plots():
 
         plt.show()
 
+    def plot_curves(self, entropy, simulations):
+        for i in range(simulations):
+            index = i + 1
+            x = entropy[index]['distance']
+            y = entropy[index]['mean']
+            # del x[0]
+            plt.plot(x, y)
+        plt.show()
+
     def plot_summatory(self, particle, mu, sigma, part_ant, i, mu_=True):
         Z_var, Z_mean = self.Z_var_mean(mu, sigma)
         fig, axs = plt.subplots(1, 1, figsize=(5, 5))
