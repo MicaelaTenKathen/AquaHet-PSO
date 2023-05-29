@@ -30,6 +30,11 @@ class Plots():
         self.cmap5 = LinearSegmentedColormap.from_list('name', ['darkviolet', 'crimson'])
         self.cmap6 = LinearSegmentedColormap.from_list('name', ['lime', 'gold'])
         self.colors = ['winter', 'copper', self.cmap2, 'spring', 'cool', self.cmap3, 'autumn', self.cmap4, self.cmap5,
+                       self.cmap6, 'winter', 'copper', self.cmap2, 'spring', 'cool', self.cmap3, 'autumn', self.cmap4, self.cmap5,
+                       self.cmap6, 'winter', 'copper', self.cmap2, 'spring', 'cool', self.cmap3, 'autumn', self.cmap4, self.cmap5,
+                       self.cmap6, 'winter', 'copper', self.cmap2, 'spring', 'cool', self.cmap3, 'autumn', self.cmap4, self.cmap5,
+                       self.cmap6, 'winter', 'copper', self.cmap2, 'spring', 'cool', self.cmap3, 'autumn', self.cmap4, self.cmap5,
+                       self.cmap6, 'winter', 'copper', self.cmap2, 'spring', 'cool', self.cmap3, 'autumn', self.cmap4, self.cmap5,
                        self.cmap6]
         self.cmapmean = 'jet'
 
@@ -245,13 +250,33 @@ class Plots():
         plt.show()
 
     def plot_curves(self, entropy, simulations):
+        fig, ax = plt.subplots()
         for i in range(simulations):
             index = i + 1
             x = entropy[index]['distance']
-            y = entropy[index]['mean']
+            y = entropy[index]['rate']
             # del x[0]
-            plt.plot(x, y)
+            ax.plot(x, y)
         plt.show()
+
+    def plot_inter(self, entropy, simulations):
+        fig, ax = plt.subplots()
+        x_ = np.linspace(0, 1000, 1)
+        all = np.zeros((len(x_), 2))
+        for i in range(simulations):
+            index = i + 1
+            x = entropy[index]['distance']
+            y = entropy[index]['rate']
+            # del x[0]
+            curve = np.interp(x_, x, y)
+            all = np.insert(all, [1],  curve, axis=1)
+        all = np.delete(all, 0, 1)
+        all = np.delete(all, 0, 1)
+
+        ax.plot(x_, np.mean(all, axis=1), 'k', color='#1B2ACC')
+        ax.fill_between(x_, np.mean(all, axis=1) - np.std(all, axis=1), np.mean(all, axis=1) + np.std(all, axis=1),
+                        alpha=0.2, edgecolor='#1B2ACC', facecolor='#089FFF',
+                        linewidth=4, linestyle='dashdot', antialiased=True)
 
     def plot_summatory(self, particle, mu, sigma, part_ant, i, mu_=True):
         Z_var, Z_mean = self.Z_var_mean(mu, sigma)

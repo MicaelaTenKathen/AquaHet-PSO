@@ -20,7 +20,7 @@ from Data.limits import Limits
 from Environment.map import Map
 from Benchmark.benchmark_functions import Benchmark_function
 from Environment.bounds import Bounds
-from Data.utils import Utils
+from Data.utils import Utils, obtain_prefabricated_vehicles
 from Environment.contamination_areas import DetectContaminationAreas
 from Environment.plot_het import Plots
 
@@ -39,8 +39,8 @@ class LawnmowerEnvironment:
         self.grid_or = Map(self.xs, ys).black_white()
 
         self.grid_min, self.grid_max, self.grid_max_x, self.grid_max_y = 0, self.ys, self.xs, self.ys
-        self.vehicles = vehicles
-        self.util = Utils(self.vehicles)
+        self.vehicles = None
+        self.n_vehicles = vehicles
         self.seed = initial_seed
         self.initial_seed = initial_seed
         self.initial_position = initial_position
@@ -51,16 +51,17 @@ class LawnmowerEnvironment:
         self.check = True
         self.turn = False
         self.g = 0
-        self.post_array = np.ones(self.vehicles)
-        self.distances = np.zeros(self.vehicles)
-        self.part_ant = np.zeros((1, self.vehicles * 2))
-        self.array_part = np.zeros((1, self.vehicles * 2))
+        self.post_array = None
+        self.distances = None
+        self.part_ant = None
+        self.array_part = None
         self.x_h = []
         self.y_h = []
         self.water_samples = []
         self.dict_n_pos = {}
         self.dict_c_pos = {}
         self.dict_error_comparison = {}
+        self.new_initial_position = []
         self.x_bench = None
         self.y_bench = None
         self.mu = []
@@ -76,6 +77,10 @@ class LawnmowerEnvironment:
         self.dict_check_turn = {}
         self.it = []
         self.f = 0
+        self.r2_data = np.array([[0, 0]])
+        self.mse_data_ = np.array([[0, 0]])
+        self.caz_mse_data = np.array([[0, 0]])
+        self.peak_error_data = np.array([[1, 0]])
         self.lam = 0.375
         self.last_sample = 0
         self.initial = True
@@ -91,9 +96,12 @@ class LawnmowerEnvironment:
         self.sub_fleets = None
         self.sensor_vehicle = None
         self.type_error = type_error
-        self.vehicles = None
         self.population = None
         self.resolution = resolution
+        self.r2_ = None
+        self.mse_ = None
+        self.caz_mse_ = None
+        self.peak_error_ = None
         self.smin = 0
         self.smax = 3
         self.size = 2
@@ -107,7 +115,7 @@ class LawnmowerEnvironment:
         self.initial_seed = initial_seed
         self.lam = 0.375
         self.positions = initial_position
-        self.initial_position = list()
+        self.initial_position = initial_position
         self.mean_error = list()
         self.conf_error = list()
         self.mean_mse_error = list()
@@ -173,8 +181,8 @@ class LawnmowerEnvironment:
             #                                                    load_file=False).available_xtest()
             self.tim = 1
         self.secure = Bounds(self.resolution, self.xs, self.ys).interest_area()
-        self.limits = Limits(self.secure, self.xs, self.ys, self.vehicles)
 
+        self.limits = None
 
         self.plot = Plots(self.xs, self.ys, self.X_test, self.secure, self.grid_min, self.grid_or,
                           'no_exploitation')
@@ -184,10 +192,14 @@ class LawnmowerEnvironment:
     def fleet_configuration(self):
         self.P = nx.MultiGraph()
         random.seed(self.seed)
-        # self.vehicles = random.randint(2, 8)
-        self.p_vehicles, self.sensor_vehicle = Utils.obtain_prefabricated_vehicles(self.subfleet_number)
+        # self.vehicles = random.randint(4, 8)
+        # print(self.n_vehicles, self.subfleet_number)
+        self.p_vehicles, self.sensor_vehicle = obtain_prefabricated_vehicles(self.n_vehicles,
+                                                                                   self.subfleet_number)
         self.vehicles = len(self.p_vehicles)
         self.population = copy.copy(self.vehicles)
+        # print(self.p_vehicles)
+        # print(self.sensor_vehicle)
         for i, particle in enumerate(self.p_vehicles):
             self.P.add_node(particle, S_p=dict.fromkeys(self.sensor_vehicle[i], []),
                             Q_p=list(), U_p=list(), index=self.p)
@@ -314,34 +326,36 @@ class LawnmowerEnvironment:
 
         self.seed += 1
         self.simulation += 1
-        if self.simulation <= 10:
-            self.subfleet_number = 1
-            if self.first_1:
-                self.array_error = list()
-                self.array_r2 = list()
-                self.first_1 = False
-        elif 10 < self.simulation <= 20:
-            self.subfleet_number = 2
-            if self.first_2:
-                self.error_subfleet_1 = copy.copy(self.array_error)
-                self.array_error = list()
-                self.r2_subfleet_1 = copy.copy(self.array_r2)
-                self.array_r2 = list()
-                self.first_2 = False
-        else:
-            self.subfleet_number = 3
-            if self.first_3:
-                self.error_subfleet_2 = copy.copy(self.array_error)
-                self.array_error = list()
-                self.r2_subfleet_2 = copy.copy(self.array_r2)
-                self.array_r2 = list()
-                self.first_3 = False
+        # if self.simulation <= 10:
+        self.subfleet_number = 1
+        if self.first_1:
+            self.array_error = list()
+            self.array_r2 = list()
+            self.first_1 = False
+        # elif 10 < self.simulation <= 20:
+        #     self.subfleet_number = 2
+        #     if self.first_2:
+        #         self.error_subfleet_1 = copy.copy(self.array_error)
+        #         self.array_error = list()
+        #         self.r2_subfleet_1 = copy.copy(self.array_r2)
+        #         self.array_r2 = list()
+        #         self.first_2 = False
+        # else:
+        #     self.subfleet_number = 3
+        #     if self.first_3:
+        #         self.error_subfleet_2 = copy.copy(self.array_error)
+        #         self.array_error = list()
+        #         self.r2_subfleet_2 = copy.copy(self.array_r2)
+        #         self.array_r2 = list()
+        #         self.first_3 = False
         self.fleet_configuration()
+        self.util = Utils(self.vehicles)
         self.reset_variables()
         self.limits = Limits(self.secure, self.xs, self.ys, self.vehicles)
         random.seed(self.seed)
         self.set_sensor()
-        self.init_positions()
+        # self.init_positions()
+        self.init_positions_tests()
         self.peaks_bench()
         self.first_values()
 
@@ -407,11 +421,25 @@ class LawnmowerEnvironment:
 
         self.initial_position = np.array(new_pos)
 
+    def init_positions_tests(self):
+        init_pos = copy.copy(self.initial_position)
+        new_pos = []
+        # print(init_pos)
+        for i in range(self.vehicles):
+            index = random.randint(0, len(init_pos) - 1)
+            new_pos.append(init_pos[index])
+            init_pos = np.delete(init_pos, index, axis=0)
+        self.new_initial_position = new_pos
+
     def reset_variables(self):
         self.dict_direction = {}
+        self.r2_data = np.array([[0, 0]])
+        self.mse_data_ = np.array([[0, 0]])
+        self.caz_mse_data = np.array([[0, 0]])
+        self.peak_error_data = np.array([[1, 0]])
         self.dict_turn = {}
         self.dict_check_turn = {}
-        self.initial_position = list()
+        # self.initial_position = list()
         self.asv = 1
         self.check = True
         self.turn = False
@@ -481,7 +509,7 @@ class LawnmowerEnvironment:
     def moving_direction(self):
         for i in range(self.vehicles):
             # if i % 2 == 0:
-            print(type(self.initial_position))
+            # print(type(self.initial_position))
             if (self.bench_limits_no[1] - self.initial_position[i, 0]) <= (
                     self.initial_position[i, 0] - self.bench_limits_no[0]):
                 self.dict_direction["vehicle%s" % i] = [-1, 0]
@@ -680,7 +708,7 @@ class LawnmowerEnvironment:
             peaks.append(bench[round(ind)])
         self.dict_sensors_[sensor]['mu']['peaks'] = copy.copy(peaks)
 
-    def calculate_error(self):
+    def calculate_error(self, final):
         if self.type_error == 'all_map_mse':
             mse_simulation = []
             for i, subfleet in enumerate(self.sub_fleets):
@@ -699,9 +727,11 @@ class LawnmowerEnvironment:
             mse_simulation = np.array(mse_simulation)
             mse_mean = np.mean(mse_simulation)
             mse_std = np.std(mse_simulation)
-            self.mean_mse_error.append(mse_mean)
-            self.array_error.append(mse_mean)
-            self.conf_mse_error.append(mse_std * 1.96)
+            self.mse_data_ = np.append(self.mse_data_, [[mse_mean, np.mean(self.distances)]], axis=0)
+            if final:
+                self.mean_mse_error.append(mse_mean)
+                self.array_error.append(mse_mean)
+                self.conf_mse_error.append(mse_std * 1.96)
         elif self.type_error == 'all_map_r2':
             r2_simulation = []
             for i, subfleet in enumerate(self.sub_fleets):
@@ -720,9 +750,11 @@ class LawnmowerEnvironment:
             r2_simulation = np.array(r2_simulation)
             r2_mean = np.mean(r2_simulation)
             r2_std = np.std(r2_simulation)
-            self.mean_error.append(r2_mean)
-            self.array_r2.append(r2_mean)
-            self.conf_error.append(r2_std * 1.96)
+            self.r2_data = np.append(self.r2_data, [[r2_mean, np.mean(self.distances)]], axis=0)
+            if final:
+                self.mean_error.append(r2_mean)
+                self.array_r2.append(r2_mean)
+                self.conf_error.append(r2_std * 1.96)
         elif self.type_error == 'peaks':
             error_simulation = []
             conf_simulation = []
@@ -736,7 +768,7 @@ class LawnmowerEnvironment:
                     mu_ = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
                     bench_ = copy.copy(self.dict_benchs_[sensor]['peaks'])
                     for j, be in enumerate(bench_):
-                        error_peak = be - mu_[index_peaks[j]]
+                        error_peak = abs(be - mu_[index_peaks[j]])
                         error_peaks.append(error_peak)
                     error_peaks = np.array(error_peaks)
                     error_mean_s = np.mean(error_peaks)
@@ -747,8 +779,10 @@ class LawnmowerEnvironment:
             error_simulation = np.array(error_simulation)
             error_mean = np.mean(error_simulation)
             error_conf = np.std(error_simulation)
-            self.mean_peak_error.append(error_mean)
-            self.conf_peak_error.append(error_conf * 1.96)
+            self.peak_error_data = np.append(self.peak_error_data, [[error_mean, np.mean(self.distances)]], axis=0)
+            if final:
+                self.mean_peak_error.append(error_mean)
+                self.conf_peak_error.append(error_conf * 1.96)
         elif self.type_error == 'zones':
             zone_error = []
             for i, subfleet in enumerate(self.sub_fleets):
@@ -766,8 +800,10 @@ class LawnmowerEnvironment:
                             estimated_all.append(mu_[index])
                     mse = mean_squared_error(y_true=real, y_pred=estimated_all)
                     zone_error.append(mse)
-            self.mean_az_mse.append(np.mean(zone_error))
-            self.conf_az_mse.append(np.std(zone_error) * 1.96)
+            self.caz_mse_data = np.append(self.caz_mse_data, [[np.mean(zone_error), np.mean(self.distances)]], axis=0)
+            if final:
+                self.mean_az_mse.append(np.mean(zone_error))
+                self.conf_az_mse.append(np.std(zone_error) * 1.96)
 
     def first_values(self):
         self.moving_direction()
@@ -790,6 +826,15 @@ class LawnmowerEnvironment:
 
         self.take_measures()
         self.gp_update()
+
+        self.type_error = 'all_map_r2'
+        self.calculate_error(False)
+        self.type_error = 'all_map_mse'
+        self.calculate_error(False)
+        self.type_error = 'peaks'
+        self.calculate_error(False)
+        self.type_error = 'zones'
+        self.calculate_error(False)
 
         # self.calculate_error()
         # self.error_data.append(self.error)
@@ -835,6 +880,14 @@ class LawnmowerEnvironment:
                 # self.it.append(self.g)
                 # self.error = self.calculate_error()
                 # self.error_data.append(self.error)
+                self.type_error = 'all_map_r2'
+                self.calculate_error(False)
+                self.type_error = 'all_map_mse'
+                self.calculate_error(False)
+                self.type_error = 'peaks'
+                self.calculate_error(False)
+                self.type_error = 'zones'
+                self.calculate_error(False)
 
                 # self.save_data()
 
@@ -849,21 +902,40 @@ class LawnmowerEnvironment:
         if (self.distances >= self.exploration_distance).any():
             done = True
             self.type_error = 'all_map_r2'
-            self.calculate_error()
+            self.calculate_error(True)
             self.type_error = 'all_map_mse'
-            self.calculate_error()
+            self.calculate_error(True)
             self.type_error = 'peaks'
-            self.calculate_error()
+            self.calculate_error(True)
             self.type_error = 'zones'
-            self.calculate_error()
-            df1 = {'Sensor': self.sensor, 'R2_sensor': self.r2_sensor, 'MSE_sensor': self.mse_sensor,
-                   'Error_peak_sensor': self.error_peak_sensor,
-                   'Number': self.cant_sensor, 'w': self.w}
-            df1 = pd.DataFrame(data=df1)
-            df2 = {'Sensors': self.sensor_vehicle}
-            df2 = pd.DataFrame(data=df2)
-            new = pd.concat([df1, df2], axis=1)
-            df1.to_excel('../Test/Lawnmower/T2/Sensors_data_' + str(self.seed) + '.xlsx')
+            self.calculate_error(True)
+            # df1 = {'Sensor': self.sensor, 'R2_sensor': self.r2_sensor, 'MSE_sensor': self.mse_sensor,
+            #        'Error_peak_sensor': self.error_peak_sensor,
+            #        'Number': self.cant_sensor, 'w': self.w}
+            # df1 = pd.DataFrame(data=df1)
+            # df2 = {'Sensors': self.sensor_vehicle}
+            # df2 = pd.DataFrame(data=df2)
+            # new = pd.concat([df1, df2], axis=1)
+            # df1.to_excel('../Test/Lawnmower/T2/Sensors_data_' + str(self.seed) + '.xlsx')
+            dist = np.arange(0, 210, 10)
+            new_mse = np.interp(dist, self.mse_data_[:, 1], self.mse_data_[:, 0])
+            new_r2 = np.interp(dist, self.r2_data[:, 1], self.r2_data[:, 0])
+            new_cazmse = np.interp(dist, self.caz_mse_data[:, 1], self.caz_mse_data[:, 0])
+            new_peakerror = np.interp(dist, self.peak_error_data[:, 1], self.peak_error_data[:, 0])
+            new_peakerror[0] = 1
+            new_mse[0] = 0
+            new_r2[0] = 0
+            new_cazmse[0] = 0
+            if self.simulation == 1:
+                self.r2_ = np.c_[dist, new_r2]
+                self.mse_ = np.c_[dist, new_mse]
+                self.caz_mse_ = np.c_[dist, new_cazmse]
+                self.peak_error_ = np.c_[dist, new_peakerror]
+            else:
+                self.r2_ = np.c_[self.r2_, new_r2]
+                self.mse_ = np.c_[self.mse_, new_mse]
+                self.caz_mse_ = np.c_[self.caz_mse_, new_cazmse]
+                self.peak_error_ = np.c_[self.peak_error_, new_peakerror]
             if self.simulation == 30:
                 self.error_subfleet_3 = copy.copy(self.array_error)
                 self.r2_subfleet_3 = copy.copy(self.array_r2)
@@ -910,24 +982,32 @@ class LawnmowerEnvironment:
               np.std(np.array(self.error_subfleet_3)) * 1.96)
         print('R2 3 Subfleets:', np.mean(np.array(self.r2_subfleet_3)), '+-',
               np.std(np.array(self.r2_subfleet_3)) * 1.96)
-        data1 = {'R2': self.mean_error, 'Conf_R2': self.conf_error, 'Mean_Error': self.mean_peak_error, 'Conf_Error': self.conf_peak_error}
-        df = pd.DataFrame(data=data1)
-        df.to_excel('../Test/Lawnmower/T2/Main_results.xlsx')
-        # fig1, ax1 = plt.subplots()
-        # ax1.set_title('R2 All Map')
-        # ax1.boxplot(self.mean_error, notch=True)
-        # fig2, ax2 = plt.subplots()
-        # ax2.set_title('Error peaks')
-        # ax2.boxplot(self.mean_peak_error, notch=True)
-        # fig3, ax3 = plt.subplots()
-        # ax3.set_title('MSE Subfleet')
-        # ax3.boxplot([self.error_subfleet_1, self.error_subfleet_2, self.error_subfleet_3], notch=True)
+        # data1 = {'R2': self.mean_error, 'Conf_R2': self.conf_error, 'Mean_Error': self.mean_peak_error, 'Conf_Error': self.conf_peak_error}
+        # df = pd.DataFrame(data=data1)
+        # df.to_excel('../Test/Lawnmower/T2/Main_results.xlsx')
+        fig1, ax1 = plt.subplots()
+        ax1.set_title('MSE MAP')
+        ax1.boxplot(self.mean_mse_error, notch=True)
+        fig2, ax2 = plt.subplots()
+        ax2.set_title('Error peaks')
+        ax2.boxplot(self.mean_peak_error, notch=True)
+        fig3, ax3 = plt.subplots()
+        ax3.set_title('MSE AZ')
+        ax3.boxplot(self.mean_az_mse, notch=True)
         # ax3.set_xticklabels(['1 Subfleet', '2 Subfleets', '3 Subfleets'], rotation=45, fontsize=8)
-        # fig4, ax4 = plt.subplots()
-        # ax4.set_title('R2 Subfleet')
-        # ax4.boxplot([self.r2_subfleet_1, self.r2_subfleet_2, self.r2_subfleet_3], notch=True)
+        fig4, ax4 = plt.subplots()
+        ax4.set_title('R2 MAP')
+        ax4.boxplot(self.mean_error, notch=True)
         # ax4.set_xticklabels(['1 Subfleet', '2 Subfleets', '3 Subfleets'], rotation=45, fontsize=8)
-        # plt.show()
+        # # plt.show()
+        df1 = pd.DataFrame(self.peak_error_)
+        df1.to_excel('../Test/Results2/Error/1LMErrorAquaHet.xlsx')
+        df2 = pd.DataFrame(self.caz_mse_)
+        df2.to_excel('../Test/Results2/MSEAZ/1LMMSEAZAquaHet.xlsx')
+        df3 = pd.DataFrame(self.mse_)
+        df3.to_excel('../Test/Results2/MSEM/1LMMSEMAquaHet.xlsx')
+        df4 = pd.DataFrame(self.r2_)
+        df4.to_excel('../Test/Results2/R2M/1LMR2MAquaHet.xlsx')
 
         print('R2:', np.mean(np.array(self.mean_error)), '+-', np.std(np.array(self.mean_error)) * 1.96)
         print('MSE:', np.mean(np.array(self.mean_mse_error)), '+-', np.std(np.array(self.mean_mse_error) * 1.96))

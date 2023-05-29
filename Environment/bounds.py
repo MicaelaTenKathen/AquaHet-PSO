@@ -171,8 +171,8 @@ class Bounds():
 
     def available_xtest(self):
         if self.load_file:
-            with open('./GroundTruth/bounds.npy'.format(self.file), 'rb') as bn:
-                df_bounds = np.load(bn)
+            # with open('./GroundTruth/bounds.npy'.format(self.file), 'rb') as bn:
+            #     df_bounds = np.load(bn)
 
             with open('./GroundTruth/grid.npy'.format(self.file), 'rb') as gd:
                 grid = np.load(gd)
@@ -180,7 +180,7 @@ class Bounds():
             with open('./GroundTruth/available.npy'.format(self.file), 'rb') as av:
                 available = np.load(av)
 
-            return df_bounds, available
+            return available
 
         else:
             available, first, last, y_first, y_last = list(), list(), list(), list(), list()
