@@ -61,7 +61,7 @@ def configurations(vs, ss):
 
 
 cantidad_de_subflotas = 1
-vehicles, sensores_in_vehicles = Utils.obtain_prefabricated_vehicles(cantidad_de_subflotas)
+vehicles, sensores_in_vehicles = Utils.obtain_prefabricated_vehicles()
 p, (vsf, ssf, cant) = configurations(vehicles, sensores_in_vehicles)
 
 edge_labels = [(u, v, len(d['S_pq'])) for u, v, d in p.edges(data=True)]

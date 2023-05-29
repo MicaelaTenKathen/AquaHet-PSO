@@ -60,7 +60,7 @@ initial_position = np.array([[8, 56],
 start_time = time.time()
 
 # PSO initialization
-vehicles = 4
+vehicles = -2
 lwm = LawnmowerEnvironment(ys, resolution, vehicles=vehicles, initial_seed=1000000, initial_position=initial_position,
                      exploration_distance=200, type_error='all_map')
 
@@ -73,7 +73,7 @@ import matplotlib.pyplot as plt
 error_vec = []
 last_error = []
 
-for i in range(30):
+for i in range(50):
     print(i)
     time_init = time.time()
     done = False

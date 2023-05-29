@@ -60,7 +60,18 @@ initial_position = np.array([[8, 56],
                              [64, 60],
                              [52, 10],
                              [91, 113],
-                             [49, 51]])
+                             [49, 51],
+                             [8, 56],
+                             [37, 16],
+                             [78, 81],
+                             [74, 124],
+                             [20, 40],
+                             [32, 92],
+                             [64, 60],
+                             [52, 10],
+                             [91, 113],
+                             [49, 51],
+                             ])
 sensors = np.array([['s1'],
                     ['s2'],
                     ['s3'],
@@ -85,12 +96,12 @@ sensors = np.array([['s1'],
 start_time = time.time()
 
 # PSO initialization
-vehicles = 5
+vehicles = -2
 stage = 'exploration'
 # stage = 'no_exploitation'
 method = 0
 pso = PSOEnvironment(resolution, ys, method, method_pso='coupled', initial_seed=1000000, initial_position=initial_position, sensor_vehicle=sensors, vehicles=vehicles,
-                     exploration_distance=1000, exploitation_distance=300, action=False, reward_function='inc_mse',
+                     exploration_distance=100, exploitation_distance=200, action=False, reward_function='inc_mse',
                      type_error='all_map', stage=stage, final_model='federated')
 
 # Gaussian process initialization
@@ -102,7 +113,7 @@ import matplotlib.pyplot as plt
 error_vec = []
 last_error = []
 
-for i in range(30):
+for i in range(50):
     print(i)
     time_init = time.time()
     done = False
