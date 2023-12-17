@@ -29,7 +29,7 @@ class Plots():
         self.cmap4 = LinearSegmentedColormap.from_list('name', ['grey', 'navy'])
         self.cmap5 = LinearSegmentedColormap.from_list('name', ['darkviolet', 'crimson'])
         self.cmap6 = LinearSegmentedColormap.from_list('name', ['lime', 'gold'])
-        self.colors = ['winter', 'copper', self.cmap2, 'spring', 'cool', self.cmap3, 'autumn', self.cmap4, self.cmap5,
+        self.colors = ['Purples',  self.cmap2, 'winter', 'pink', 'copper', self.cmap3, 'autumn', self.cmap4, self.cmap5,
                        self.cmap6, 'winter', 'copper', self.cmap2, 'spring', 'cool', self.cmap3, 'autumn', self.cmap4, self.cmap5,
                        self.cmap6, 'winter', 'copper', self.cmap2, 'spring', 'cool', self.cmap3, 'autumn', self.cmap4, self.cmap5,
                        self.cmap6, 'winter', 'copper', self.cmap2, 'spring', 'cool', self.cmap3, 'autumn', self.cmap4, self.cmap5,
@@ -158,6 +158,58 @@ class Plots():
         ax1.yaxis.set_major_formatter(ticks_y)
         # plt.savefig("../Image/Contamination/GT3/Ground3.png")
         plt.show()
+
+    def fleet_movement(self, part_ant, vehicle_name):
+        fig, axs =plt.subplots()
+        Z = np.ones([self.grid.shape[0], self.grid.shape[1]])
+        Z[self.grid_or == 0] = np.nan
+        Z[self.grid_or == 1] = 15
+        initial_x = list()
+        initial_y = list()
+        final_x = list()
+        final_y = list()
+        for i in range(part_ant.shape[1]):
+            if i % 2 == 0:
+                initial_x.append(part_ant[0, i])
+                final_x.append(part_ant[-1, i])
+            else:
+                initial_y.append(part_ant[0, i])
+                final_y.append(part_ant[-1, i])
+        vehicles = int(part_ant.shape[1] / 2)
+        # print(vehicles)
+        for i in range(vehicles):
+            if initial_x[i] < 50:
+                x = -3
+            else:
+                x = 3
+            if initial_y[i] < 75:
+                y = -3
+            else:
+                y = 3
+            self.plot_trajectory_classic(axs, part_ant[:, 2 * i], part_ant[:, 2 * i + 1], colormap=self.colors[i])
+            axs.annotate(vehicle_name[i], (initial_x[i], initial_y[i]), fontsize=15, xytext=(initial_x[i] + x, initial_y[i] + y),
+                         bbox=dict(boxstyle="round", alpha=0.1))
+        axs.plot(initial_x, initial_y, 'o', color='black', markersize=3, label='ASVs initial positions')
+        # axs.plot(final_x, final_y, 'x', color='red', markersize=4, label='ASVs exploration final positions')
+        # fig.suptitle('Trajectories (exploration phase)')
+
+
+        axs.legend(loc=3, fontsize=6)
+        im2 = axs.imshow(Z.T, interpolation='bilinear', origin='lower', cmap="Blues", vmin=0, vmax=30)
+        axs.set_xlabel("x [m]")
+        axs.set_ylabel("y [m]")
+        # axs.set_title("Vehicle %s" % str(j + 1))
+        axs.set_yticks([0, 20, 40, 60, 80, 100, 120, 140])
+        axs.set_xticks([0, 50, 100])
+        axs.set_aspect('equal')
+        axs.set_ylim([self.ys, 0])
+        axs.grid(True)
+        ticks_x = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+        axs.xaxis.set_major_formatter(ticks_x)
+
+        ticks_y = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+        axs.yaxis.set_major_formatter(ticks_y)
+
 
     def mu_exploitation(self, dict_mu, dict_sigma, centers):
         cols = round(centers / 2)
@@ -602,32 +654,50 @@ class Plots():
     def zones_plot(self, z_, number):
         action_zone = np.zeros([self.grid.shape[0], self.grid.shape[1]])
         j = 0
+        y_ = 145
+        fig, ax = plt.subplots()
+        colors = ['red', 'orangered', 'orange', 'gold', 'greenyellow']
+        num = [[35, 75], [78, 118], [70, 82], [63, 69], [79, 93]]
         while j < number:
             action_coord = list(z_['zone%s' % j]['coord'])
+            # num = z_['zone%s' % j]['peaks'][0]
             # action_impo = list(np.full((len(z_['zone%s' % j]['coord']), 1), len(z_['zone%s' % j]['zones'])))
+            half = len(action_coord) / 2
+            # n_ = num[j]
             for i in range(len(action_coord)):
                 coord = action_coord[i]
                 x = coord[0]
                 y = coord[1]
+                # if i == round(half):
                 action_zone[x, y] = 20 - 3*j
+            # x1 = n_[0]
+            # y1 = n_[1]
             action_zone[self.grid_or == 0] = np.nan
-            fig, ax = plt.subplots()
             im2 = ax.imshow(action_zone.T, interpolation='none', origin='lower', cmap=self.cmap)
-            plt.colorbar(im2, ax=ax, label='Priority', shrink=1.0)
+            # print(num)
             ax.set_xlabel("x [m]")
             ax.set_ylabel("y [m]")
-            ax.set_title('Zones')
+            # ax.set_title('Combined action zones (CAZs)')
             ax.set_ylim([self.ys, 0])
             ax.set_aspect('equal')
             ax.grid(True)
+            sen_ = []
+            for i, key in z_['zone%s' % j]['sensors'].keys():
+                sen_.append('s%s' %key)
+            leg = 'CAZ %s' % j, z_['zone%s' % j]['vehicles'], sen_
+            # ax.text(5, y_, leg, fontsize=15, bbox=dict(facecolor=colors[j], alpha=1))
+            # ax.text(x1, y1, j, fontsize=10, bbox=dict(facecolor=colors[j], alpha=0.5))
             ticks_x = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
             ax.xaxis.set_major_formatter(ticks_x)
 
             ticks_y = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
             ax.yaxis.set_major_formatter(ticks_y)
             # plt.savefig("../Image/Contamination/GT3/Ground3.png")
-            plt.show()
             j += 1
+            y_ -= 8
+        plt.colorbar(im2, ax=ax, label='Priority', shrink=1.0)
+        # fig.suptitle('Combined action zones (CAZs)')
+        plt.show()
 
     def zoom_outside(self, srcax, roi, dstax, label, color="red", linewidth=2, roiKwargs={}, arrowKwargs={}):
         '''Create a zoomed subplot outside the original subplot

@@ -8,6 +8,8 @@ from random import shuffle
 
 import openpyxl
 from sklearn.gaussian_process import GaussianProcessRegressor
+import matplotlib.ticker as ticker
+import matplotlib.pyplot as plt
 from sklearn.gaussian_process.kernels import RBF
 from sklearn.metrics import mean_squared_error, r2_score
 from deap import base, creator, tools, algorithms
@@ -876,18 +878,17 @@ class LawnmowerEnvironment:
                 self.last_sample = np.mean(self.distances)
 
                 self.take_measures()
-                self.gp_update()
                 # self.it.append(self.g)
                 # self.error = self.calculate_error()
                 # self.error_data.append(self.error)
-                self.type_error = 'all_map_r2'
-                self.calculate_error(False)
-                self.type_error = 'all_map_mse'
-                self.calculate_error(False)
-                self.type_error = 'peaks'
-                self.calculate_error(False)
-                self.type_error = 'zones'
-                self.calculate_error(False)
+                # self.type_error = 'all_map_r2'
+                # self.calculate_error(False)
+                # self.type_error = 'all_map_mse'
+                # self.calculate_error(False)
+                # self.type_error = 'peaks'
+                # self.calculate_error(False)
+                # self.type_error = 'zones'
+                # self.calculate_error(False)
 
                 # self.save_data()
 
@@ -901,6 +902,8 @@ class LawnmowerEnvironment:
 
         if (self.distances >= self.exploration_distance).any():
             done = True
+            self.gp_update()
+
             self.type_error = 'all_map_r2'
             self.calculate_error(True)
             self.type_error = 'all_map_mse'
@@ -909,6 +912,64 @@ class LawnmowerEnvironment:
             self.calculate_error(True)
             self.type_error = 'zones'
             self.calculate_error(True)
+            if self.simulation > 0:
+                list_ind = []
+                vehicles = []
+                trajectory = list()
+                first = True
+                for i, particle in enumerate(self.p_vehicles):
+                    list_ind.append(self.P.nodes[particle]['index'])
+                    vehicles.append(particle)
+                    if first:
+                        trajectory = np.array(self.P.nodes[particle]['U_p'])
+                        first = False
+                    else:
+                        new = np.array(self.P.nodes[particle]['U_p'])
+                        trajectory = np.concatenate((trajectory, new), axis=1)
+                    # self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
+                # self.plot.fleet_movement(trajectory, vehicles)
+                self.gp_update()
+                # pos_fig = [[0, 0], [0, 102, 2)
+                pf = 0
+                # for i, subfleet in enumerate(self.sub_fleets):
+                #     sensors = self.s_sf[i]
+                #     for s, sensor in enumerate(sensors):
+                #         # bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
+                #         # # self.plot.benchmark(bench, sensor)
+                #         mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
+                #         sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['data'])
+                #         Z_un, Z_mean = self.plot.Z_var_mean(mu, sigma)
+                #         p = pos_fig[pf]
+                #         x1 = p[0]
+                #         y = p[1]
+                #         im3 = axs[x1, y].imshow(Z_mean.T, interpolation='bilinear', origin='lower', cmap="jet", vmin=0, vmax=1)
+                #         # plot_bench = np.copy(bench)
+                #         # plot_bench[self.grid_or == 0] = np.nan
+                #         # levels = np.arange(0, 1, 0.2)
+                #         # extent = (0, self.xs, 0, self.ys)
+                #         # im4 = axs[x1, y].imshow(plot_bench.T, interpolation='bilinear', origin='lower', cmap='jet', vmin=0,
+                #         #                         vmax=1.0)
+                #         # contours = axs[x1, y].contour(plot_bench.T, levels, colors='k', origin='lower', extent=extent,
+                #         #                               alpha=0.5)
+                #         # plt.clabel(contours, inline=True, fontsize=6)
+                #         pf += 1
+                #         # # plt.colorbar(im3, ax=axs[1], label='µ', shrink=1.0)
+                #         axs[x1, y].set_xlabel("x [m]")
+                #         axs[x1, y].set_ylabel("y [m]")
+                #         axs[x1, y].set_yticks([0, 20, 40, 60, 80, 100, 120, 140])
+                #         axs[x1, y].set_xticks([0, 50, 100])
+                #         axs[x1, y].set_title(sensor)
+                #         axs[x1, y].set_ylim([self.ys, 0])
+                #         axs[x1, y].set_aspect('equal')
+                #         axs[x1, y].grid(True)
+                #         ticks_x = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+                #         axs[x1, y].xaxis.set_major_formatter(ticks_x)
+                #
+                #         ticks_y = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+                #         axs[x1, y].yaxis.set_major_formatter(ticks_y)
+                #
+                # fig.colorbar(im3, ax=axs.ravel().tolist(), label='µ', shrink=1)
+                # fig.suptitle('Final models')
             # df1 = {'Sensor': self.sensor, 'R2_sensor': self.r2_sensor, 'MSE_sensor': self.mse_sensor,
             #        'Error_peak_sensor': self.error_peak_sensor,
             #        'Number': self.cant_sensor, 'w': self.w}
@@ -985,29 +1046,29 @@ class LawnmowerEnvironment:
         # data1 = {'R2': self.mean_error, 'Conf_R2': self.conf_error, 'Mean_Error': self.mean_peak_error, 'Conf_Error': self.conf_peak_error}
         # df = pd.DataFrame(data=data1)
         # df.to_excel('../Test/Lawnmower/T2/Main_results.xlsx')
-        fig1, ax1 = plt.subplots()
-        ax1.set_title('MSE MAP')
-        ax1.boxplot(self.mean_mse_error, notch=True)
-        fig2, ax2 = plt.subplots()
-        ax2.set_title('Error peaks')
-        ax2.boxplot(self.mean_peak_error, notch=True)
-        fig3, ax3 = plt.subplots()
-        ax3.set_title('MSE AZ')
-        ax3.boxplot(self.mean_az_mse, notch=True)
-        # ax3.set_xticklabels(['1 Subfleet', '2 Subfleets', '3 Subfleets'], rotation=45, fontsize=8)
-        fig4, ax4 = plt.subplots()
-        ax4.set_title('R2 MAP')
-        ax4.boxplot(self.mean_error, notch=True)
+        # fig1, ax1 = plt.subplots()
+        # ax1.set_title('MSE MAP')
+        # ax1.boxplot(self.mean_mse_error, notch=True)
+        # fig2, ax2 = plt.subplots()
+        # ax2.set_title('Error peaks')
+        # ax2.boxplot(self.mean_peak_error, notch=True)
+        # fig3, ax3 = plt.subplots()
+        # ax3.set_title('MSE AZ')
+        # ax3.boxplot(self.mean_az_mse, notch=True)
+        # # ax3.set_xticklabels(['1 Subfleet', '2 Subfleets', '3 Subfleets'], rotation=45, fontsize=8)
+        # fig4, ax4 = plt.subplots()
+        # ax4.set_title('R2 MAP')
+        # ax4.boxplot(self.mean_error, notch=True)
         # ax4.set_xticklabels(['1 Subfleet', '2 Subfleets', '3 Subfleets'], rotation=45, fontsize=8)
         # # plt.show()
-        df1 = pd.DataFrame(self.peak_error_)
-        df1.to_excel('../Test/Results2/Error/1LMErrorAquaHet.xlsx')
-        df2 = pd.DataFrame(self.caz_mse_)
-        df2.to_excel('../Test/Results2/MSEAZ/1LMMSEAZAquaHet.xlsx')
-        df3 = pd.DataFrame(self.mse_)
-        df3.to_excel('../Test/Results2/MSEM/1LMMSEMAquaHet.xlsx')
-        df4 = pd.DataFrame(self.r2_)
-        df4.to_excel('../Test/Results2/R2M/1LMR2MAquaHet.xlsx')
+        # df1 = pd.DataFrame(self.peak_error_)
+        # df1.to_excel('../Test/Results2/Error/1LMErrorAquaHet.xlsx')
+        # df2 = pd.DataFrame(self.caz_mse_)
+        # df2.to_excel('../Test/Results2/MSEAZ/1LMMSEAZAquaHet.xlsx')
+        # df3 = pd.DataFrame(self.mse_)
+        # df3.to_excel('../Test/Results2/MSEM/1LMMSEMAquaHet.xlsx')
+        # df4 = pd.DataFrame(self.r2_)
+        # df4.to_excel('../Test/Results2/R2M/1LMR2MAquaHet.xlsx')
 
         print('R2:', np.mean(np.array(self.mean_error)), '+-', np.std(np.array(self.mean_error)) * 1.96)
         print('MSE:', np.mean(np.array(self.mean_mse_error)), '+-', np.std(np.array(self.mean_mse_error) * 1.96))

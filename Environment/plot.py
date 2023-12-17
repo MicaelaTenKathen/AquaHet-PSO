@@ -83,6 +83,9 @@ class Plots():
         benchma_plot = plot.T
         return plot, benchma_plot
 
+
+
+
     def gaussian(self, mu, sigma, part_ant):
         Z_var, Z_mean = self.Z_var_mean(mu, sigma)
 

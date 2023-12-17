@@ -202,6 +202,632 @@ def obtain_prefabricated_vehicles(vehicle_number, subfleet_number):
                 (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
                  [['s7'], ['s7'], ['s8'], ['s9'], ['s9'], ['s8'], ['s8'], ['s8'], ['s8'], ['s7']])])
 
+    elif vehicle_number == 523:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5'],
+            [['s1'], ['s1'], ['s2'], ['s2', 's3'], ['s3']])
+
+    elif vehicle_number == 524:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5'],
+                    [['s1', 's4'], ['s1', 's4'], ['s2'], ['s2', 's3'], ['s3']])
+
+    elif vehicle_number == 525:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5'],
+                    [['s1', 's4'], ['s1', 's4'], ['s2', 's5'], ['s2', 's3'], ['s3', 's5']])
+
+    elif vehicle_number == 526:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5'],
+                    [['s1', 's4', 's6'], ['s1', 's4'], ['s2', 's5', 's6'], ['s2', 's3'], ['s3', 's5']])
+
+    elif vehicle_number == 527:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5'],
+                    [['s1', 's4', 's6'], ['s1', 's4', 's7'], ['s2', 's5', 's6'], ['s2', 's3', 's7'], ['s3', 's5']])
+
+    elif vehicle_number == 532:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5'],
+            [['s1'], ['s1'], ['s2'], ['s2', 's1'], ['s2']])
+
+    elif vehicle_number == 533:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5'],
+            [['s1'], ['s1', 's3'], ['s2', 's3'], ['s2', 's1'], ['s2', 's3']])
+
+    elif vehicle_number == 534:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5'],
+            [['s1', 's4'], ['s1', 's3', 's4'], ['s2', 's3', 's4'], ['s2', 's1'], ['s2', 's3']])
+
+    elif vehicle_number == 535:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5'],
+            [['s1', 's4', 's5'], ['s1', 's3', 's4'], ['s2', 's3', 's4'], ['s2', 's1', 's5'], ['s2', 's3', 's5']])
+
+    elif vehicle_number == 542:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5'],
+            [['s1'], ['s1', 's2'], ['s1', 's2'], ['s2', 's1'], ['s2']])
+
+    elif vehicle_number == 543:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5'],
+            [['s1', 's3'], ['s1', 's2', 's3'], ['s1', 's2'], ['s2', 's1', 's3'], ['s2', 's3']])
+
+    elif vehicle_number == 623:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6'],
+            [['s1'], ['s1'], ['s2'], ['s2'], ['s3'], ['s3']])
+
+    elif vehicle_number == 624:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6'],
+            [['s1', 's4'], ['s1'], ['s2', 's4'], ['s2'], ['s3'], ['s3']])
+
+    elif vehicle_number == 625:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6'],
+            [['s1', 's4'], ['s1', 's5'], ['s2', 's4'], ['s2'], ['s3', 's5'], ['s3']])
+
+    elif vehicle_number == 626:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6'],
+            [['s1', 's4'], ['s1', 's5'], ['s2', 's4'], ['s2', 's6'], ['s3', 's5'], ['s3', 's6']])
+
+    elif vehicle_number == 627:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6'],
+            [['s1', 's4', 's7'], ['s1', 's5'], ['s2', 's4'], ['s2', 's6'], ['s3', 's5', 's7'], ['s3', 's6']])
+
+    elif vehicle_number == 628:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6'],
+            [['s1', 's4', 's7'], ['s1', 's5', 's8'], ['s2', 's4'], ['s2', 's6', 's8'], ['s3', 's5', 's7'], ['s3', 's6']])
+
+    elif vehicle_number == 629:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6'],
+            [['s1', 's4', 's7'], ['s1', 's5', 's8'], ['s2', 's4', 's9'], ['s2', 's6', 's8'], ['s3', 's5', 's7'], ['s3', 's6', 's9']])
+
+    elif vehicle_number == 632:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6'],
+            [['s1'], ['s1'], ['s2'], ['s2'], ['s1'], ['s2']])
+
+    elif vehicle_number == 633:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6'],
+            [['s1'], ['s1', 's3'], ['s2', 's3'], ['s2'], ['s1', 's2'], ['s3']])
+
+    elif vehicle_number == 634:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6'],
+            [['s1', 's4'], ['s1', 's3'], ['s2', 's3'], ['s2', 's4'], ['s1', 's2'], ['s3', 's4']])
+
+    elif vehicle_number == 635:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6'],
+            [['s1', 's4', 's5'], ['s1', 's3'], ['s2', 's3', 's5'], ['s2', 's4', 's5'], ['s1', 's2'], ['s3', 's4']])
+
+    elif vehicle_number == 636:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6'],
+            [['s1', 's4', 's5'], ['s1', 's3', 's6'], ['s2', 's3', 's5'], ['s2', 's4', 's5'], ['s1', 's2', 's6'], ['s3', 's4', 's6']])
+
+    elif vehicle_number == 642:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6'],
+            [['s1'], ['s1'], ['s2', 's1'], ['s2'], ['s1', 's2'], ['s2']])
+
+    elif vehicle_number == 643:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6'],
+            [['s1', 's3'], ['s1', 's3'], ['s2', 's1'], ['s2', 's3'], ['s1', 's2'], ['s2', 's3']])
+
+    elif vehicle_number == 644:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6'],
+            [['s1', 's4', 's3'], ['s1', 's3', 's4'], ['s2', 's1'], ['s2', 's3', 's4'], ['s1', 's2', 's4'], ['s2', 's3']])
+
+    elif vehicle_number == 652:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6'],
+            [['s1', 's2'], ['s1'], ['s2', 's1'], ['s2'], ['s1', 's2'], ['s2', 's1']])
+
+    elif vehicle_number == 653:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6'],
+            [['s1', 's2', 's3'], ['s1', 's3'], ['s2', 's1', 's3'], ['s2', 's3'], ['s1', 's2', 's3'], ['s2', 's1']])
+
+    elif vehicle_number == 724:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1'], ['s1'], ['s2'], ['s2'], ['s3'], ['s3', 's4'], ['s4']])
+
+    elif vehicle_number == 725:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1'], ['s1', 's5'], ['s2', 's5'], ['s2'], ['s3'], ['s3', 's4'], ['s4']])
+
+    elif vehicle_number == 726:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1', 's6'], ['s1', 's5'], ['s2', 's5'], ['s2'], ['s3', 's6'], ['s3', 's4'], ['s4']])
+
+    elif vehicle_number == 727:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1', 's6'], ['s1', 's5'], ['s2', 's5'], ['s2', 's7'], ['s3', 's6'], ['s3', 's4'], ['s4', 's7']])
+
+    elif vehicle_number == 728:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1', 's6', 's8'], ['s1', 's5'], ['s2', 's5'], ['s2', 's7', 's8'], ['s3', 's6'], ['s3', 's4'], ['s4', 's7']])
+
+    elif vehicle_number == 729:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1', 's6', 's8'], ['s1', 's5', 's9'], ['s2', 's5'], ['s2', 's7', 's8'], ['s3', 's6'], ['s3', 's4'], ['s4', 's7', 's9']])
+
+    elif vehicle_number == 7210:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1', 's6', 's8'], ['s1', 's5', 's9'], ['s2', 's5', 's10'], ['s2', 's7', 's8'], ['s3', 's6', 's10'], ['s3', 's4'], ['s4', 's7', 's9']])
+
+    elif vehicle_number == 733:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1'], ['s1'], ['s2'], ['s2', 's3'], ['s3'], ['s3', 's1'], ['s2']])
+
+    elif vehicle_number == 734:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1'], ['s1', 's4'], ['s2', 's4'], ['s2', 's3'], ['s3', 's4'], ['s3', 's1'], ['s2']])
+
+    elif vehicle_number == 735:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1', 's5'], ['s1', 's4'], ['s2', 's4', 's5'], ['s2', 's3'], ['s3', 's4'], ['s3', 's1'], ['s2', 's5']])
+
+    elif vehicle_number == 736:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1', 's5', 's6'], ['s1', 's4'], ['s2', 's4', 's5'], ['s2', 's3', 's6'], ['s3', 's4'], ['s3', 's1'], ['s2', 's5', 's6']])
+
+    elif vehicle_number == 737:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1', 's5', 's6'], ['s1', 's4', 's7'], ['s2', 's4', 's5'], ['s2', 's3', 's6'], ['s3', 's4', 's7'], ['s3', 's1', 's7'], ['s2', 's5', 's6']])
+
+    elif vehicle_number == 742:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1'], ['s1'], ['s2'], ['s2', 's1'], ['s2'], ['s1'], ['s2']])
+
+    elif vehicle_number == 743:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1', 's3'], ['s1', 's3'], ['s2', 's3'], ['s2', 's1'], ['s2', 's3'], ['s1'], ['s2']])
+
+    elif vehicle_number == 744:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1', 's3'], ['s1', 's3'], ['s2', 's3'], ['s2', 's1', 's4'], ['s2', 's3', 's4'], ['s1', 's4'], ['s2', 's4']])
+
+    elif vehicle_number == 745:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1', 's3', 's5'], ['s1', 's3', 's5'], ['s2', 's3', 's5'], ['s2', 's1', 's4'], ['s2', 's3', 's4'], ['s1', 's4', 's5'], ['s2', 's4', 's5']])
+
+    elif vehicle_number == 752:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1'], ['s1'], ['s2', 's1'], ['s2', 's1'], ['s2'], ['s1', 's2'], ['s2']])
+
+    elif vehicle_number == 753:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1', 's3'], ['s1', 's3'], ['s2', 's1'], ['s2', 's1'], ['s2', 's3'], ['s1', 's2', 's3'], ['s2', 's3']])
+
+    elif vehicle_number == 754:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1', 's3', 's4'], ['s1', 's3', 's4'], ['s2', 's1', 's4'], ['s2', 's1'], ['s2', 's3', 's4'], ['s1', 's2', 's3'], ['s2', 's3', 's4']])
+
+    elif vehicle_number == 762:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1'], ['s1', 's2'], ['s2', 's1'], ['s2', 's1'], ['s2', 's1'], ['s1', 's2'], ['s2']])
+
+    elif vehicle_number == 763:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
+            [['s1', 's3'], ['s1', 's2', 's3'], ['s2', 's1', 's3'], ['s2', 's1', 's3'], ['s2', 's1', 's3'], ['s1', 's2'], ['s2', 's3']])
+
+    elif vehicle_number == 824:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+            [['s1'], ['s1'], ['s2'], ['s2'], ['s3'], ['s3'], ['s4'], ['s4']])
+
+    elif vehicle_number == 825:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+            [['s1', 's5'], ['s1'], ['s2', 's5'], ['s2'], ['s3'], ['s3'], ['s4'], ['s4']])
+
+    elif vehicle_number == 826:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+            [['s1', 's5'], ['s1', 's6'], ['s2', 's5'], ['s2'], ['s3', 's6'], ['s3'], ['s4'], ['s4']])
+
+    elif vehicle_number == 827:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+                    [['s1', 's5'], ['s1', 's6'], ['s2', 's5'], ['s2'], ['s3', 's6'], ['s3', 's7'], ['s4', 's7'], ['s4']])
+
+    elif vehicle_number == 828:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+                    [['s1', 's5'], ['s1', 's6'], ['s2', 's5'], ['s2', 's8'], ['s3', 's6'], ['s3', 's7'], ['s4', 's7'], ['s4', 's8']])
+
+    elif vehicle_number == 829:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+                    [['s1', 's5', 's9'], ['s1', 's6'], ['s2', 's5'], ['s2', 's8', 's9'], ['s3', 's6'], ['s3', 's7'], ['s4', 's7'], ['s4', 's8']])
+
+    elif vehicle_number == 8210:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+                    [['s1', 's5', 's9'], ['s1', 's6', 's10'], ['s2', 's5'], ['s2', 's8', 's9'], ['s3', 's6'], ['s3', 's7'], ['s4', 's7', 's10'], ['s4', 's8']])
+
+    elif vehicle_number == 833:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+                    [['s1'], ['s1'], ['s2'], ['s2'], ['s3'], ['s3'], ['s1', 's3'], ['s2']])
+
+    elif vehicle_number == 834:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+                    [['s1', 's4'], ['s1'], ['s2', 's4'], ['s2'], ['s3', 's4'], ['s3'], ['s1', 's3'], ['s2']])
+
+    elif vehicle_number == 835:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+                    [['s1', 's4'], ['s1', 's5'], ['s2', 's4'], ['s2', 's5'], ['s3', 's4'], ['s3', 's5'], ['s1', 's3'], ['s2']])
+
+    elif vehicle_number == 836:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+                    [['s1', 's4'], ['s1', 's5', 's6'], ['s2', 's4'], ['s2', 's5'], ['s3', 's4', 's6'], ['s3', 's5'], ['s1', 's3'], ['s2', 's6']])
+
+    elif vehicle_number == 837:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+                    [['s1', 's4', 's7'], ['s1', 's5', 's6'], ['s2', 's4'], ['s2', 's5', 's7'], ['s3', 's4', 's6'], ['s3', 's5'], ['s1', 's3', 's7'], ['s2', 's6']])
+
+    elif vehicle_number == 838:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+                    [['s1', 's4', 's7'], ['s1', 's5', 's6'], ['s2', 's4', 's8'], ['s2', 's5', 's7'], ['s3', 's4', 's6'], ['s3', 's5', 's8'], ['s1', 's3', 's7'], ['s2', 's6', 's8']])
+
+    elif vehicle_number == 842:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+            [['s1'], ['s1'], ['s2'], ['s2'], ['s2'], ['s2'], ['s1'], ['s1']])
+
+    elif vehicle_number == 843:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+            [['s1', 's3'], ['s3'], ['s2', 's3'], ['s2', 's1'], ['s2'], ['s2', 's3'], ['s1'], ['s1']])
+
+    elif vehicle_number == 844:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+            [['s1', 's3'], ['s3', 's4'], ['s2', 's3'], ['s2', 's1'], ['s2', 's4'], ['s2', 's3'], ['s1', 's4'], ['s1', 's4']])
+
+    elif vehicle_number == 845:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+            [['s1', 's3', 's5'], ['s3', 's4'], ['s2', 's3', 's5'], ['s2', 's1'], ['s2', 's4', 's5'], ['s2', 's3'], ['s1', 's4', 's5'], ['s1', 's4']])
+
+    elif vehicle_number == 846:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+            [['s1', 's3', 's5'], ['s3', 's4', 's6'], ['s2', 's3', 's5'], ['s2', 's1', 's6'], ['s2', 's4', 's5'], ['s2', 's3', 's6'], ['s1', 's4', 's5'], ['s1', 's4', 's6']])
+
+    elif vehicle_number == 852:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+            [['s1'], ['s1'], ['s2', 's1'], ['s2'], ['s2'], ['s2'], ['s1', 's2'], ['s1']])
+
+    elif vehicle_number == 853:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+            [['s1', 's3'], ['s1', 's3'], ['s2', 's1'], ['s2'], ['s2', 's3'], ['s2', 's3'], ['s1', 's2'], ['s1', 's3']])
+
+    elif vehicle_number == 854:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+            [['s1', 's3', 's4'], ['s1', 's3'], ['s2', 's1', 's4'], ['s2', 's4'], ['s2', 's3'], ['s2', 's3', 's4'], ['s1', 's2'], ['s1', 's3', 's4']])
+
+    elif vehicle_number == 862:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+            [['s1'], ['s1', 's2'], ['s2', 's1'], ['s2'], ['s2'], ['s2', 's1'], ['s1', 's2'], ['s1']])
+
+    elif vehicle_number == 863:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+            [['s1', 's3'], ['s1', 's2'], ['s2', 's1', 's3'], ['s2', 's3'], ['s2', 's3'], ['s2', 's1'], ['s1', 's2', 's3'], ['s1', 's3']])
+
+    elif vehicle_number == 864:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+            [['s1', 's3', 's4'], ['s1', 's2', 's4'], ['s2', 's1', 's3'], ['s2', 's3', 's4'], ['s2', 's3', 's4'], ['s2', 's1', 's4'], ['s1', 's2', 's3'], ['s1', 's3', 's4']])
+
+    elif vehicle_number == 925:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1'], ['s1'], ['s2'], ['s2'], ['s3'], ['s3'], ['s4'], ['s4', 's5'], ['s5']])
+
+    elif vehicle_number == 926:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1', 's6'], ['s1'], ['s2', 's6'], ['s2'], ['s3'], ['s3'], ['s4'], ['s4', 's5'], ['s5']])
+
+    elif vehicle_number == 927:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1', 's6'], ['s1', 's7'], ['s2', 's6'], ['s2'], ['s3', 's7'], ['s3'], ['s4'], ['s4', 's5'], ['s5']])
+
+    elif vehicle_number == 928:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1', 's6'], ['s1', 's7'], ['s2', 's6'], ['s2', 's8'], ['s3', 's7'], ['s3'], ['s4'], ['s4', 's5'], ['s5', 's8']])
+
+    elif vehicle_number == 929:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1', 's6'], ['s1', 's7'], ['s2', 's6'], ['s2', 's8'], ['s3', 's7'], ['s3', 's9'], ['s4', 's9'], ['s4', 's5'], ['s5', 's8']])
+
+    elif vehicle_number == 9210:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1', 's6', 's10'], ['s1', 's7'], ['s2', 's6'], ['s2', 's8'], ['s3', 's7'], ['s3', 's9', 's10'], ['s4', 's9'], ['s4', 's5'], ['s5', 's8']])
+
+    elif vehicle_number == 933:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1'], ['s1'], ['s2'], ['s2'], ['s3'], ['s3'], ['s1'], ['s2'], ['s3']])
+
+    elif vehicle_number == 934:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1'], ['s1', 's4'], ['s2'], ['s2', 's4'], ['s3'], ['s3', 's4'], ['s1'], ['s2'], ['s3']])
+
+    elif vehicle_number == 935:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1', 's5'], ['s1', 's4'], ['s2', 's5'], ['s2', 's4'], ['s3'], ['s3', 's4'], ['s1'], ['s2'], ['s3', 's5']])
+
+    elif vehicle_number == 936:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1', 's5'], ['s1', 's4'], ['s2', 's5'], ['s2', 's4'], ['s3', 's6'], ['s3', 's4'], ['s1', 's6'], ['s2', 's6'], ['s3', 's5']])
+
+    elif vehicle_number == 937:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1', 's5', 's7'], ['s1', 's4'], ['s2', 's5'], ['s2', 's4'], ['s3', 's6', 's7'], ['s3', 's4'], ['s1', 's6', 's7'], ['s2', 's6'], ['s3', 's5']])
+
+    elif vehicle_number == 938:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1', 's5', 's7'], ['s1', 's4', 's8'], ['s2', 's5'], ['s2', 's4', 's8'], ['s3', 's6', 's7'], ['s3', 's4'], ['s1', 's6', 's7'], ['s2', 's6', 's8'], ['s3', 's5']])
+
+    elif vehicle_number == 938:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1', 's5', 's7'], ['s1', 's4', 's8'], ['s2', 's5', 's9'], ['s2', 's4', 's8'], ['s3', 's6', 's7'],
+             ['s3', 's4', 's9'], ['s1', 's6', 's7'], ['s2', 's6', 's8'], ['s3', 's5', 's9']])
+
+    elif vehicle_number == 943:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1'], ['s1', 's3'], ['s2'], ['s2'], ['s3', 's2'], ['s3'], ['s3'], ['s1'], ['s2', 's1']])
+
+    elif vehicle_number == 944:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+                    [['s1', 's4'], ['s1', 's3'], ['s2', 's4'], ['s2'], ['s3', 's2'], ['s3'], ['s3', 's4'], ['s1', 's4'], ['s2', 's1']])
+
+    elif vehicle_number == 945:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+                    [['s1', 's4'], ['s1', 's3', 's5'], ['s2', 's4', 's5'], ['s2', 's5'], ['s3', 's2'], ['s3', 's5'], ['s3', 's4'], ['s1', 's4'], ['s2', 's1']])
+
+    elif vehicle_number == 946:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+                    [['s1', 's4', 's6'], ['s1', 's3', 's5'], ['s2', 's4', 's5'], ['s2', 's5', 's6'], ['s3', 's2'], ['s3', 's5', 's6'], ['s3', 's4'], ['s1', 's4', 's6'], ['s2', 's1']])
+
+    elif vehicle_number == 952:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1'], ['s1'], ['s2'], ['s2'], ['s2'], ['s2'], ['s1'], ['s1'], ['s2', 's1']])
+
+    elif vehicle_number == 953:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1', 's3'], ['s1'], ['s2', 's3'], ['s2', 's3'], ['s2'], ['s3'], ['s1', 's3'], ['s1', 's2'], ['s2', 's1']])
+
+    elif vehicle_number == 954:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1', 's3'], ['s1', 's4'], ['s2', 's3'], ['s2', 's3'], ['s2', 's4'], ['s3', 's4'], ['s1', 's3', 's4'], ['s1', 's2'], ['s2', 's1', 's4']])
+
+    elif vehicle_number == 955:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1', 's3', 's5'], ['s1', 's4', 's5'], ['s2', 's3'], ['s2', 's3', 's5'], ['s2', 's4'], ['s3', 's4', 's5'], ['s1', 's3', 's4'], ['s1', 's2', 's5'], ['s2', 's1', 's4']])
+
+    elif vehicle_number == 962:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1'], ['s1'], ['s2'], ['s2'], ['s2'], ['s2', 's1'], ['s1'], ['s1', 's2'], ['s2', 's1']])
+
+    elif vehicle_number == 963:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1', 's3'], ['s1', 's3'], ['s2', 's3'], ['s2', 's3'], ['s2', 's3'], ['s2', 's1'], ['s1', 's3'], ['s1', 's2'], ['s2', 's1']])
+
+    elif vehicle_number == 964:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'],
+            [['s1', 's3'], ['s1', 's3', 's4'], ['s2', 's3', 's4'], ['s2', 's3', 's4'], ['s2', 's3', 's4'], ['s2', 's1'], ['s1', 's3', 's4'], ['s1', 's2', 's4'], ['s2', 's1']])
+
+    elif vehicle_number == 1025:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1'], ['s1'], ['s2'], ['s2'], ['s3'], ['s3'], ['s4'], ['s4'], ['s5'], ['s5']])
+
+    elif vehicle_number == 1026:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1'], ['s1', 's6'], ['s2'], ['s2'], ['s3', 's6'], ['s3'], ['s4'], ['s4'], ['s5'], ['s5']])
+
+    elif vehicle_number == 1027:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1'], ['s1', 's6'], ['s2'], ['s2'], ['s3', 's6'], ['s3', 's7'], ['s4'], ['s4'], ['s5', 's7'], ['s5']])
+
+    elif vehicle_number == 1028:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1'], ['s1', 's6'], ['s2'], ['s2', 's8'], ['s3', 's6'], ['s3', 's7'], ['s4'], ['s4', 's8'], ['s5', 's7'], ['s5']])
+
+    elif vehicle_number == 1029:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1', 's9'], ['s1', 's6'], ['s2'], ['s2', 's8'], ['s3', 's6'], ['s3', 's7'], ['s4', 's9'], ['s4', 's8'], ['s5', 's7'], ['s5']])
+
+    elif vehicle_number == 10210:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1', 's9'], ['s1', 's6'], ['s2', 's10'], ['s2', 's8'], ['s3', 's6'], ['s3', 's7'], ['s4', 's9'], ['s4', 's8'], ['s5', 's7'], ['s5', '10']])
+
+    elif vehicle_number == 1034:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1'], ['s1'], ['s2'], ['s2', 's4'], ['s3'], ['s3'], ['s4'], ['s4', 's3'], ['s1'], ['s2']])
+
+    elif vehicle_number == 1035:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1'], ['s1', 's5'], ['s2', 's5'], ['s2', 's4'], ['s3'], ['s3', 's5'], ['s4'], ['s4', 's3'], ['s1'], ['s2']])
+
+    elif vehicle_number == 1036:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1', 's6'], ['s1', 's5'], ['s2', 's5'], ['s2', 's4'], ['s3', 's6'], ['s3', 's5'], ['s4', 's6'], ['s4', 's3'], ['s1'], ['s2']])
+
+    elif vehicle_number == 1037:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1', 's6'], ['s1', 's5'], ['s2', 's5', 's7'], ['s2', 's4'], ['s3', 's6'], ['s3', 's5'], ['s4', 's6'], ['s4', 's3'], ['s1', 's7'], ['s7', 's2']])
+
+    elif vehicle_number == 1038:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1', 's6', 's8'], ['s1', 's5'], ['s2', 's5', 's7'], ['s2', 's4', 's8'], ['s3', 's6'], ['s3', 's5', 's8'], ['s4', 's6'], ['s4', 's3'], ['s1', 's7'], ['s7', 's2']])
+
+    elif vehicle_number == 1039:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1', 's6', 's8'], ['s1', 's5', 's9'], ['s2', 's5', 's7'], ['s2', 's4', 's8'], ['s3', 's6'],
+             ['s3', 's5', 's8'], ['s4', 's6', 's9'], ['s4', 's3'], ['s1', 's7'], ['s7', 's2', 's9']])
+
+    elif vehicle_number == 10310:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1', 's6', 's8'], ['s1', 's5', 's9'], ['s2', 's5', 's7'], ['s2', 's4', 's8'], ['s3', 's6', 's10'],
+             ['s3', 's5', 's8'], ['s4', 's6', 's9'], ['s4', 's3', 's10'], ['s1', 's7', 's10'], ['s7', 's2', 's9']])
+
+    elif vehicle_number == 1043:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1'], ['s1'], ['s2'], ['s2', 's1'], ['s3'], ['s3'], ['s3'], ['s2', 's3'], ['s1'], ['s2']])
+
+    elif vehicle_number == 1044:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1'], ['s1', 's4'], ['s2', 's4'], ['s2', 's1'], ['s3', 's4'], ['s3'], ['s3', 's1'], ['s2', 's3'], ['s4'], ['s2']])
+
+    elif vehicle_number == 1045:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1', 's5'], ['s1', 's4'], ['s2', 's4'], ['s2', 's1'], ['s3', 's4'], ['s3', 's5'], ['s3', 's1'], ['s2', 's3'], ['s4', 's5'], ['s2', 's5']])
+
+    elif vehicle_number == 1046:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1', 's5', 's6'], ['s1', 's4'], ['s2', 's4', 's6'], ['s2', 's1'], ['s3', 's4', 's6'], ['s3', 's5', 's6'], ['s3', 's1'], ['s2', 's3'], ['s4', 's5'], ['s2', 's5']])
+
+    elif vehicle_number == 1047:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1', 's5', 's6'], ['s1', 's4', 's7'], ['s2', 's4', 's6'], ['s2', 's1', 's7'],
+             ['s3', 's4', 's6'], ['s3', 's5', 's6'], ['s3', 's1', 's7'], ['s2', 's3'], ['s4', 's5', 's7'], ['s2', 's5']])
+
+    elif vehicle_number == 1052:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1'], ['s1'], ['s2'], ['s2'], ['s1'], ['s2'], ['s1'], ['s2'], ['s1'], ['s2']])
+
+    elif vehicle_number == 1053:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1', 's3'], ['s1'], ['s2', 's3'], ['s3'], ['s1', 's2'], ['s2', 's3'], ['s1', 's3'], ['s2'], ['s1'], ['s2']])
+
+    elif vehicle_number == 1054:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1', 's3'], ['s1', 's4'], ['s2', 's3'], ['s3', 's4'], ['s1', 's2'], ['s2', 's3'], ['s1', 's3'], ['s2', 's4'], ['s1', 's4'], ['s2', 's4']])
+
+    elif vehicle_number == 1055:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1', 's3', 's5'], ['s1', 's4'], ['s2', 's3', 's5'], ['s3', 's4'], ['s1', 's2', 's5'], ['s2', 's3'], ['s1', 's3'], ['s2', 's4', 's5'], ['s1', 's4', 's5'], ['s2', 's4']])
+
+    elif vehicle_number == 1056:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1', 's3', 's5'], ['s1', 's4', 's6'], ['s2', 's3', 's5'], ['s3', 's4', 's6'], ['s1', 's2', 's5'],
+             ['s2', 's3', 's6'], ['s1', 's3', 's6'], ['s2', 's4', 's5'], ['s1', 's4', 's5'], ['s2', 's4', 's6']])
+
+    elif vehicle_number == 1062:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1'], ['s1'], ['s2', 's1'], ['s2'], ['s1', 's2'], ['s2'], ['s1'], ['s2'], ['s1'], ['s2']])
+
+    elif vehicle_number == 1063:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1'], ['s1', 's3'], ['s2', 's1'], ['s2', 's3'], ['s1', 's2'], ['s2', 's3'], ['s3'], ['s2', 's1'], ['s1', 's3'], ['s2', 's3']])
+
+    elif vehicle_number == 1064:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1', 's4'], ['s1', 's3'], ['s2', 's1', 's4'], ['s2', 's3'], ['s1', 's2'], ['s2', 's3'], ['s3', 's4'], ['s2', 's1', 's4'], ['s1', 's3', 's4'], ['s2', 's3', 's4']])
+
+    elif vehicle_number == 1065:
+        if subfleet_number == 1:
+            return (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+            [['s1', 's4', 's5'], ['s1', 's3', 's5'], ['s2', 's1', 's4'], ['s2', 's3', 's5'], ['s1', 's2', 's5'],
+             ['s2', 's3', 's5'], ['s3', 's4', 's5'], ['s2', 's1', 's4'], ['s1', 's3', 's4'], ['s2', 's3', 's4']])
+
     elif vehicle_number == -2:
         if subfleet_number == 1:
             return random.choice([
@@ -220,7 +846,7 @@ def obtain_prefabricated_vehicles(vehicle_number, subfleet_number):
                 # (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'],
                 #  [['s1', 's2'], ['s1', 's3', 's4'], ['s1', 's4'], ['s2', 's3'], ['s2', 's4'],
                 #   ['s3', 's4'], ['s1', 's2', 's3']]),
-                (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],
+                (['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8'],
                  [['s1', 's2'], ['s1', 's3'], ['s1', 's4'], ['s1', 's2'], ['s2', 's3'], ['s2', 's4'],
                   ['s3', 's4'], ['s3', 's4']]),
                 # (['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'],

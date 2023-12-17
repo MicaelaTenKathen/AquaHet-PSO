@@ -12,6 +12,8 @@ import networkx as nx
 import pandas as pd
 import openpyxl
 from statistics import mean
+import matplotlib.ticker as ticker
+import matplotlib.pyplot as plt
 from deap import base, creator, tools, algorithms
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
@@ -73,6 +75,8 @@ class PSOEnvironment(gym.Env):
         self.new_initial_position = list()
         self.subfleet_number = 1
         self.simulation = 0
+        self.fig, self.axs = plt.subplots(3,3)
+        self.init_fig = True
         self.cant = 0
         self.P = nx.MultiGraph()
         self.sub_fleets = None
@@ -89,7 +93,7 @@ class PSOEnvironment(gym.Env):
         self.population = None
         self.resolution = resolution
         self.smin = 0
-        self.smax = 3
+        self.smax = 2
         self.size = 2
         self.wmin = 0.4 / (15000 / ys)
         self.wmax = 0.9 / (15000 / ys)
@@ -99,7 +103,7 @@ class PSOEnvironment(gym.Env):
         self.gpr = GaussianProcessRegressor(kernel=ker, alpha=1e-6)  # optimizer=None)
         self.seed = initial_seed
         self.initial_seed = initial_seed
-        self.lam = 0.375
+        self.lam = 0.3
         self.reward_function = reward_function
         self.behavioral_method = behavioral_method
         self.initial_position = initial_position
@@ -227,7 +231,7 @@ class PSOEnvironment(gym.Env):
         random.seed(self.seed)
         # self.vehicles = random.randint(2, 8)
         self.p_vehicles, self.sensor_vehicle = obtain_prefabricated_vehicles(self.n_vehicles,
-                                                                                   self.subfleet_number)
+                                                                             self.subfleet_number)
         # self.p_vehicles, self.sensor_vehicle = ['v1', 'v2', 'v3'], [['s1', 's2'], ['s1'], ['s2']]
         self.vehicles = len(self.p_vehicles)
         # self.vehicles = 4
@@ -410,11 +414,15 @@ class PSOEnvironment(gym.Env):
         toolbox = base.Toolbox()
         toolbox.register("individual", init_shuffle, creator.Individual, i_size=len(index_))
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+        ind1 = [0, 1, 2, 3, 4, 5, 6, 7]
+        ind2 = [4, 2, 7, 5, 1, 3, 6, 0]
 
         toolbox.register("evaluate", evaluate_disp)
         toolbox.register("mate", tools.cxOrdered)
         toolbox.register("mutate", tools.mutShuffleIndexes, indpb=indmutpb)
         toolbox.register("select", tools.selTournament, tournsize=3)
+        # print('fitness ind1', evaluate_disp(ind1))
+        # print('fitness ind2', evaluate_disp(ind2))
 
         pop = toolbox.population(POP_SIZE)
         hof = tools.ParetoFront(similar)
@@ -443,7 +451,7 @@ class PSOEnvironment(gym.Env):
         # print(init_pos)
         for i in range(self.vehicles):
             index = random.randint(0, len(init_pos) - 1)
-            new_pos.append(init_pos[index])
+            new_pos.append(init_pos[i])
             init_pos = np.delete(init_pos, index, axis=0)
         self.new_initial_position = new_pos
 
@@ -1742,8 +1750,8 @@ class PSOEnvironment(gym.Env):
             for s, sensor in enumerate(sensors):
                 radio = 10
                 self.dict_sensors_[sensor] = self.detect.areas_levels(self.dict_sensors_[sensor], self.vehicles, radio)
-                # if self.simulation > 24:
-                # self.plot.action_areas(self.dict_sensors_[sensor]['action_zones'], sensor)
+                # if self.simulation > 0:
+                #     self.plot.action_areas(self.dict_sensors_[sensor]['action_zones'], sensor)
                 # self.plot.action_areas(self.dict_benchs_[sensor]['action_zones'], sensor)
         for i, subfleet in enumerate(self.sub_fleets):
             sensors = self.s_sf[i]
@@ -1751,7 +1759,7 @@ class PSOEnvironment(gym.Env):
             self.z_['subfleet%s' % i] = {}
             self.z_['subfleet%s' % i] = self.detect.overlapping_areas(sensors, self.dict_sensors_, check)
             check, no_assigned, assigned = self.check_vehicles(i, subfleet)
-            # if self.simulation > 10:
+            # if self.simulation > 0:
             #   self.plot.zones_plot(self.z_['subfleet%s' % i], len(self.z_['subfleet%s' % i]))
             t = 0
             while not check:
@@ -1763,7 +1771,7 @@ class PSOEnvironment(gym.Env):
                     t += 1
                     print('in')
                     # self.plot.zones_plot(self.z_['subfleet%s' % i], len(self.z_['subfleet%s' % i]))
-                    # if self.simulation > 9:
+                    # if self.simulation > 0:
                     #   self.plot.zones_plot(self.z_['subfleet%s' % i], len(self.z_['subfleet%s' % i]))
 
                 else:
@@ -1776,7 +1784,8 @@ class PSOEnvironment(gym.Env):
                     check, no_assigned, assigned = self.check_vehicles(i, subfleet)
 
                     # check = True
-            # self.plot.zones_plot(self.z_['subfleet%s' % i], len(self.z_['subfleet%s' % i]))
+                    # if self.simulation > 0:
+                    #     self.plot.zones_plot(self.z_['subfleet%s' % i], len(self.z_['subfleet%s' % i]))
             # if self.simulation > 0:
             #     self.plot.zones_plot(self.z_['subfleet%s' % i], len(self.z_['subfleet%s' % i]))
             self.configuration_exploit(i, sensors)
@@ -1988,11 +1997,11 @@ class PSOEnvironment(gym.Env):
         done = False
         # print(self.distances)
         # if self.simulation > 10:
-            # for i, subfleet in enumerate(self.sub_fleets):
+        # for i, subfleet in enumerate(self.sub_fleets):
         #             sensors = self.s_sf[i]
         #             for s, sensor in enumerate(sensors):
-        #                 bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
-        #                 # self.plot.benchmark(bench, sensor)
+        # #                 bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
+        # #                 # self.plot.benchmark(bench, sensor)
         #                 mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
         #                 sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['data'])
         #                 vehicles = copy.copy(self.dict_sensors_[sensor]['vehicles'])
@@ -2008,7 +2017,7 @@ class PSOEnvironment(gym.Env):
         #                         new = np.array(self.P.nodes[veh]['U_p'])
         #                         trajectory = np.concatenate((trajectory, new), axis=1)
         #                 self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
-        #         for part in self.pop:
+        # #         for part in self.pop:
         #             print(part.node, part, part.speed)
         #             print(self.P.nodes[part.node]['D_p'])
 
@@ -2100,29 +2109,346 @@ class PSOEnvironment(gym.Env):
                 # if max(self.max_un) <= 0.5 or np.mean(self.distances) == self.dist_pre or (np.mean(self.distances) >= self.exploitation_distance):
                 self.mean_un.append(max(self.max_un))
                 self.stage = "exploitation"
-                # print('distances:', self.distances)
-                # print(self.entropy[self.simulation]['rate'])
+            # list_ind = []
+            # vehicles_ = []
+            # trajectory = list()
+            # first = True
+            # for part in self.pop:
+            #     list_ind.append(self.P.nodes[part.node]['index'])
+            #     vehicles_.append(part.node)
+            #     if first:
+            #         trajectory = np.array(self.P.nodes[part.node]['U_p'])
+            #         first = False
+            #     else:
+            #         new = np.array(self.P.nodes[part.node]['U_p'])
+            #         trajectory = np.concatenate((trajectory, new), axis=1)
+                        # self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
+                    # self.plot.fleet_movement(trajectory, vehicles)
+            # pos_fig = [[0, 0], [0, 1], [1, 0], [1, 1]]
+            # # fig, axs = plt.subplots(2, 2)
+            # pf = 0
+            # for i, subfleet in enumerate(self.sub_fleets):
+            #     sensors = self.s_sf[i]
+            #     for s, sensor in enumerate(sensors):
+            #         # bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
+            #         # self.plot.benchmark(bench, sensor)
+            #         mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
+            #         sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['data'])
+            #         Z_un, Z_mean = self.plot.Z_var_mean(mu, sigma)
+            #         p = pos_fig[pf]
+            #         x1 = p[0]
+            #         y = p[1]
+            #         im3 = self.axs[x1, y].imshow(Z_mean.T, interpolation='bilinear', origin='lower', cmap="jet",
+            #                                 vmin=0, vmax=1)
+            #         # plt.colorbar(im3, ax=axs[1], label='µ', shrink=1.0)
+            #         if self.init_fig:
+            #             self.axs[x1, y].set_xlabel("x [m]")
+            #             self.axs[x1, y].set_ylabel("y [m]")
+            #             self.axs[x1, y].set_yticks([0, 20, 40, 60, 80, 100, 120, 140])
+            #             self.axs[x1, y].set_xticks([0, 50, 100])
+            #             self.axs[x1, y].set_title(sensor)
+            #             self.axs[x1, y].set_ylim([self.ys, 0])
+            #             self.axs[x1, y].set_aspect('equal')
+            #             self.axs[x1, y].grid(True)
+            #             ticks_x = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+            #             self.axs[x1, y].xaxis.set_major_formatter(ticks_x)
+            #
+            #             ticks_y = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+            #             self.axs[x1, y].yaxis.set_major_formatter(ticks_y)
+            #         pf += 1
+            # if self.init_fig:
+            #     self.fig.colorbar(im3, ax=self.axs.ravel().tolist(), label='µ', shrink=1)
+            #     plt.pause(6)
+            #     self.init_fig = False
+            # else:
+            #     plt.pause(0.5)
+            # plt.show()
+
+                # self.fig.suptitle('Exploration phase models')
+
+                # vehicles = copy.copy(self.dict_sensors_[sensor]['vehicles'])
+                # trajectory = list()
+                # first = True
+                # list_ind = list()
+                # for veh in vehicles:
+                #     list_ind.append(self.P.nodes[veh]['index'])
+                #     if first:
+                #         trajectory = np.array(self.P.nodes[veh]['U_p'])
+                #         first = False
+                #     else:
+                #         new = np.array(self.P.nodes[veh]['U_p'])
+                #         trajectory = np.concatenate((trajectory, new), axis=1)
+                # # self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
+                # self.plot.fleet_movement(trajectory, vehicles)
+            # print('distances:', self.distances)
+            # print(self.entropy[self.simulation]['rate'])
+
+
+            # Z = np.ones([self.plot.grid.shape[0], self.plot.grid.shape[1]])
+            # Z[self.grid_or == 0] = np.nan
+            # Z[self.grid_or == 1] = 15
+            # initial_x = list()
+            # initial_y = list()
+            # final_x = list()
+            # final_y = list()
+            # vehicles = int(trajectory.shape[1] / 2)
+            # if self.init_fig:
+            #     for i in range(trajectory.shape[1]):
+            #         if i % 2 == 0:
+            #             initial_x.append(trajectory[0, i])
+            #             final_x.append(trajectory[-1, i])
+            #         else:
+            #             initial_y.append(trajectory[0, i])
+            #             final_y.append(trajectory[-1, i])
+            #     # print(vehicles)
+            #     for i in range(vehicles):
+            #         if initial_x[i] < 50:
+            #             x = -3
+            #         else:
+            #             x = 3
+            #         if initial_y[i] < 75:
+            #             y = -3
+            #         else:
+            #             y = 3
+            #
+            #         self.axs.annotate(vehicles_[i], (initial_x[i], initial_y[i]), fontsize=15,
+            #                           xytext=(initial_x[i] + x, initial_y[i] + y),
+            #                           bbox=dict(boxstyle="round", alpha=0.1))
+            # for i in range(vehicles):
+            #     self.plot.plot_trajectory_classic(self.axs, trajectory[:, 2 * i], trajectory[:, 2 * i + 1],
+            #                                       colormap=self.plot.colors[i])
+            # im2 = self.axs.imshow(Z.T, interpolation='bilinear', origin='lower', cmap="Blues", vmin=0, vmax=30)
+            #
+            # if self.init_fig:
+            #     self.axs.plot(initial_x, initial_y, 'o', color='black', markersize=3, label='ASVs initial positions')
+            #     self.axs.legend(loc=3, fontsize=6)
+            #     self.axs.set_xlabel("x [m]")
+            #     self.axs.set_ylabel("y [m]")
+            #     # axs.set_title("Vehicle %s" % str(j + 1))
+            #     self.axs.set_yticks([0, 20, 40, 60, 80, 100, 120, 140])
+            #     self.axs.set_xticks([0, 50, 100])
+            #     self.axs.set_aspect('equal')
+            #     self.axs.set_ylim([self.ys, 0])
+            #     self.axs.grid(True)
+            #     ticks_x = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+            #     self.axs.xaxis.set_major_formatter(ticks_x)
+            #
+            #     ticks_y = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+            #     self.axs.yaxis.set_major_formatter(ticks_y)
+            #
+            # # axs.plot(final_x, final_y, 'x', color='red', markersize=4, label='ASVs exploration final positions')
+            # # fig.suptitle('Trajectories (exploration phase)')
+            #     plt.pause(6)
+            #     self.init_fig = False
+            # else:
+            #     plt.pause(0.5)
+            # plt.show()
+
         elif self.stage == "exploitation":
             if self.explore:
                 self.obtain_zones()
                 self.explore = False
             done = self.step_exploit(self.action_exploit)
+            # list_ind = []
+            # vehicles_ = []
+            # trajectory = list()
+            # first = True
+            # for part in self.pop:
+            #     list_ind.append(self.P.nodes[part.node]['index'])
+            #     vehicles_.append(part.node)
+            #     if first:
+            #         trajectory = np.array(self.P.nodes[part.node]['Up_exploit'])
+            #         first = False
+            #     else:
+            #         new = np.array(self.P.nodes[part.node]['Up_exploit'])
+            #         trajectory = np.concatenate((trajectory, new), axis=1)
+            # Z = np.ones([self.plot.grid.shape[0], self.plot.grid.shape[1]])
+            # Z[self.grid_or == 0] = np.nan
+            # Z[self.grid_or == 1] = 15
+            # initial_x = list()
+            # initial_y = list()
+            # final_x = list()
+            # final_y = list()
+            # vehicles = int(trajectory.shape[1] / 2)
+            # if self.init_fig:
+            #     for i in range(trajectory.shape[1]):
+            #         if i % 2 == 0:
+            #             initial_x.append(trajectory[0, i])
+            #             final_x.append(trajectory[-1, i])
+            #         else:
+            #             initial_y.append(trajectory[0, i])
+            #             final_y.append(trajectory[-1, i])
+            #     # print(vehicles)
+            #     for i in range(vehicles):
+            #         if initial_x[i] < 50:
+            #             x = -3
+            #         else:
+            #             x = 3
+            #         if initial_y[i] < 75:
+            #             y = -3
+            #         else:
+            #             y = 3
+            #
+            #         self.axs.annotate(vehicles_[i], (initial_x[i], initial_y[i]), fontsize=15,
+            #                           xytext=(initial_x[i] + x, initial_y[i] + y),
+            #                           bbox=dict(boxstyle="round", alpha=0.1))
+            # for i in range(vehicles):
+            #     self.plot.plot_trajectory_classic(self.axs, trajectory[:, 2 * i], trajectory[:, 2 * i + 1],
+            #                                       colormap=self.plot.colors[i])
+            # im2 = self.axs.imshow(Z.T, interpolation='bilinear', origin='lower', cmap="Blues", vmin=0, vmax=30)
+            #
+            # if self.init_fig:
+            #     self.axs.plot(initial_x, initial_y, 'o', color='black', markersize=3, label='ASVs exploit')
+            #     self.axs.legend(loc=3, fontsize=6)
+            #     self.axs.set_xlabel("x [m]")
+            #     self.axs.set_ylabel("y [m]")
+            #     # axs.set_title("Vehicle %s" % str(j + 1))
+            #     self.axs.set_yticks([0, 20, 40, 60, 80, 100, 120, 140])
+            #     self.axs.set_xticks([0, 50, 100])
+            #     self.axs.set_aspect('equal')
+            #     self.axs.set_ylim([self.ys, 0])
+            #     self.axs.grid(True)
+            #     ticks_x = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+            #     self.axs.xaxis.set_major_formatter(ticks_x)
+            #
+            #     ticks_y = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+            #     self.axs.yaxis.set_major_formatter(ticks_y)
+            #
+            # # axs.plot(final_x, final_y, 'x', color='red', markersize=4, label='ASVs exploration final positions')
+            # # fig.suptitle('Trajectories (exploration phase)')
+            #     plt.pause(6)
+            #     self.init_fig = False
+            # else:
+            #     plt.pause(0.5)
+            # plt.show()
+            pos_fig = [[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2], [2, 0], [2, 1], [2, 2]]
+            # fig, axs = plt.subplots(3, 3)
+            pf = 0
+            for i, subfleet in enumerate(self.sub_fleets):
+                for j, zo in enumerate(self.z_['subfleet%s' % i].keys()):
+                    zone = self.z_['subfleet%s' % i][zo]
+                    vehicles = zone['vehicles']
+                    sensors = zone['sensors'].keys()
+                    for s, sensor in enumerate(sensors):
+                        # bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
+                        # self.plot.benchmark(bench, sensor)
+                        mu = copy.copy(zone['sensors'][sensor]['mu']['data'])
+                        sigma = copy.copy(zone['sensors'][sensor]['sigma']['data'])
+                        Z_un, Z_mean = self.plot.Z_var_mean(mu, sigma)
+                        p = pos_fig[pf]
+                        x1 = p[0]
+                        y = p[1]
+                        z = j + 1
+                        im3 = self.axs[x1, y].imshow(Z_mean.T, interpolation='bilinear', origin='lower', cmap="jet",
+                                                     vmin=0, vmax=1)
+                        # plt.colorbar(im3, ax=axs[1], label='µ', shrink=1.0)
+                        if self.init_fig:
+                            if y == 0:
+                                self.axs[x1, y].set_ylabel("y [km]")
+                                self.axs[x1, y].set_yticks([0, 20, 40, 60, 80, 100, 120, 140])
+
+                            if x1 == 2:
+                                self.axs[x1, y].set_xlabel("x [km]")
+                                self.axs[x1, y].set_xticks([0, 50, 100])
+
+                            if y == 2 and x1 == 1:
+                                self.axs[x1, y].set_xlabel("x [km]")
+                                self.axs[x1, y].set_xticks([0, 50, 100])
+                            self.axs[x1, y].set_title('Zone %s' % j + ' - ' + sensor)
+                            self.axs[x1, y].set_ylim([self.ys, 0])
+                            self.axs[x1, y].set_aspect('equal')
+                            ticks_y = ticker.FuncFormatter(lambda x, pos: format(int(x / 10), ','))
+                            self.axs[x1, y].yaxis.set_major_formatter(ticks_y)
+                            ticks_x = ticker.FuncFormatter(lambda x, pos: format(int(x / 10), ','))
+                            self.axs[x1, y].xaxis.set_major_formatter(ticks_x)
+                            self.axs[x1, y].grid(True)
+                        pf += 1
+            if self.init_fig:
+                self.fig.delaxes(self.axs[2, 2])
+                self.fig.colorbar(im3, ax=self.axs.ravel().tolist(), label='µ', shrink=1)
+                plt.pause(6)
+                self.init_fig = False
+            else:
+                plt.pause(0.5)
+            plt.show()
         elif self.stage == "no_exploitation":
             action = action
             self.exploration_distance = self.exploitation_distance
             done = self.step_explore(action)
             if (self.distances >= self.exploration_distance).any() or np.max(self.distances) == self.dist_pre:
                 done = True
+
         if done:
-            self.gp_update()
-            self.type_error = 'all_map_r2'
-            self.calculate_error(True)
-            self.type_error = 'all_map_mse'
-            self.calculate_error(True)
-            self.type_error = 'peaks'
-            self.calculate_error(True)
-            self.type_error = 'zones'
-            self.calculate_error(True)
+            if self.simulation > 0:
+                list_ind = []
+                vehicles = []
+                trajectory = list()
+                first = True
+                for part in self.pop:
+                    list_ind.append(self.P.nodes[part.node]['index'])
+                    vehicles.append(part.node)
+                    if first:
+                        trajectory = np.array(self.P.nodes[part.node]['Up_exploit'])
+                        first = False
+                    else:
+                        new = np.array(self.P.nodes[part.node]['Up_exploit'])
+                        trajectory = np.concatenate((trajectory, new), axis=1)
+                    # self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
+                # self.plot.fleet_movement(trajectory, vehicles)
+
+
+            # fig.suptitle('CAZ models (exploitation phase)')
+            # self.gp_update()
+            # pos_fig = [[0, 0], [0, 1], [1, 0], [1, 1]]
+            # fig, axs = plt.subplots(2, 2)
+            # pf = 0
+            # for i, subfleet in enumerate(self.sub_fleets):
+            #     sensors = self.s_sf[i]
+            #     for s, sensor in enumerate(sensors):
+            #         bench = copy.copy(self.dict_benchs_[sensor]['map_created'])
+            #         # # self.plot.benchmark(bench, sensor)
+            #         # mu = copy.copy(self.dict_sensors_[sensor]['mu']['data'])
+            #         # sigma = copy.copy(self.dict_sensors_[sensor]['sigma']['data'])
+            #         # Z_un, Z_mean = self.plot.Z_var_mean(mu, sigma)
+            #         p = pos_fig[pf]
+            #         x1 = p[0]
+            #         y = p[1]
+            #         # im3 = axs[x1, y].imshow(Z_mean.T, interpolation='bilinear', origin='lower', cmap="jet", vmin=0, vmax=1)
+            #         plot_bench = np.copy(bench)
+            #         plot_bench[self.grid_or == 0] = np.nan
+            #         levels = np.arange(0, 1, 0.2)
+            #         extent = (0, self.xs, 0, self.ys)
+            #         im4 = axs[x1, y].imshow(plot_bench.T, interpolation='bilinear', origin='lower', cmap='jet', vmin=0,
+            #                                 vmax=1.0)
+            #         contours = axs[x1, y].contour(plot_bench.T, levels, colors='k', origin='lower', extent=extent,
+            #                                       alpha=0.5)
+            #         plt.clabel(contours, inline=True, fontsize=6)
+            #         pf += 1
+            #         # # plt.colorbar(im3, ax=axs[1], label='µ', shrink=1.0)
+            #         axs[x1, y].set_xlabel("x [m]")
+            #         axs[x1, y].set_ylabel("y [m]")
+            #         axs[x1, y].set_yticks([0, 20, 40, 60, 80, 100, 120, 140])
+            #         axs[x1, y].set_xticks([0, 50, 100])
+            #         axs[x1, y].set_title(sensor)
+            #         axs[x1, y].set_ylim([self.ys, 0])
+            #         axs[x1, y].set_aspect('equal')
+            #         axs[x1, y].grid(True)
+            #         ticks_x = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+            #         axs[x1, y].xaxis.set_major_formatter(ticks_x)
+            #
+            #         ticks_y = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))
+            #         axs[x1, y].yaxis.set_major_formatter(ticks_y)
+            #
+            # fig.colorbar(im4, ax=axs.ravel().tolist(), label='µ', shrink=1)
+            # # fig.suptitle('Final models')
+            # self.type_error = 'all_map_r2'
+            # self.calculate_error(True)
+            # self.type_error = 'all_map_mse'
+            # self.calculate_error(True)
+            # self.type_error = 'peaks'
+            # self.calculate_error(True)
+            # self.type_error = 'zones'
+            # self.calculate_error(True)
 
             dist = np.arange(0, 210, 10)
             new_mse = np.interp(dist, self.mse_data[:, 1], self.mse_data[:, 0])
@@ -2151,7 +2477,7 @@ class PSOEnvironment(gym.Env):
             # if self.simulation == 30:
             #     self.error_subfleet_3 = copy.copy(self.array_error)
             #     self.r2_subfleet_3 = copy.copy(self.array_r2)
-            # if self.simulation > 2:
+            # if self.simulation > 0:
             #     for i, subfleet in enumerate(self.sub_fleets):
             #         sensors = self.s_sf[i]
             #         for s, sensor in enumerate(sensors):
@@ -2171,7 +2497,8 @@ class PSOEnvironment(gym.Env):
             #                 else:
             #                     new = np.array(self.P.nodes[veh]['U_p'])
             #                     trajectory = np.concatenate((trajectory, new), axis=1)
-            #             self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
+            #             # self.plot.plot_classic(mu, sigma, trajectory, sensor, list_ind)
+            #             self.plot.fleet_movement(trajectory, vehicles)
             # for i, subfleet in enumerate(self.sub_fleets):
             #     for j, zo in enumerate(self.z_['subfleet%s' % i].keys()):
             #         zone = self.z_['subfleet%s' % i][zo]
@@ -2220,29 +2547,29 @@ class PSOEnvironment(gym.Env):
         new_r2 = np.interp(dist, self.r2_data[:, 1], self.r2_data[:, 0])
         new_cazmse = np.interp(dist, self.caz_mse_data[:, 1], self.caz_mse_data[:, 0])
         new_peakerror = np.interp(dist, self.peak_error_data[:, 1], self.peak_error_data[:, 0])
-        fig1, ax1 = plt.subplots()
-        ax1.set_title('MSE MAP')
-        ax1.boxplot(self.mean_mse_error, notch=True)
-        fig2, ax2 = plt.subplots()
-        ax2.set_title('Error peaks')
-        ax2.boxplot(self.mean_peak_error, notch=True)
-        fig3, ax3 = plt.subplots()
-        ax3.set_title('MSE AZ')
-        ax3.boxplot(self.mean_az_mse, notch=True)
-        # ax3.set_xticklabels(['1 Subfleet', '2 Subfleets', '3 Subfleets'], rotation=45, fontsize=8)
-        fig4, ax4 = plt.subplots()
-        ax4.set_title('R2 MAP')
-        ax4.boxplot(self.mean_error, notch=True)
+        # fig1, ax1 = plt.subplots()
+        # ax1.set_title('MSE MAP')
+        # ax1.boxplot(self.mean_mse_error, notch=True)
+        # fig2, ax2 = plt.subplots()
+        # ax2.set_title('Error peaks')
+        # ax2.boxplot(self.mean_peak_error, notch=True)
+        # fig3, ax3 = plt.subplots()
+        # ax3.set_title('MSE AZ')
+        # ax3.boxplot(self.mean_az_mse, notch=True)
+        # # ax3.set_xticklabels(['1 Subfleet', '2 Subfleets', '3 Subfleets'], rotation=45, fontsize=8)
+        # fig4, ax4 = plt.subplots()
+        # ax4.set_title('R2 MAP')
+        # ax4.boxplot(self.mean_error, notch=True)
         # ax4.set_xticklabels(['1 Subfleet', '2 Subfleets', '3 Subfleets'], rotation=45, fontsize=8)
         # # plt.show()
-        df1 = pd.DataFrame(self.peak_error_)
-        df1.to_excel('../Test/Results2/Error/1DCErrorAquaHet.xlsx')
-        df2 = pd.DataFrame(self.caz_mse_)
-        df2.to_excel('../Test/Results2/MSEAZ/1DCMSEAZAquaHet.xlsx')
-        df3 = pd.DataFrame(self.mse_)
-        df3.to_excel('../Test/Results2/MSEM/1DCMSEMAquaHet.xlsx')
-        df4 = pd.DataFrame(self.r2_)
-        df4.to_excel('../Test/Results2/R2M/1DCR2MAquaHet.xlsx')
+        # df1 = pd.DataFrame(self.peak_error_)
+        # df1.to_excel('../Test/Results2/Error/1DCErrorAquaHet.xlsx')
+        # df2 = pd.DataFrame(self.caz_mse_)
+        # df2.to_excel('../Test/Results2/MSEAZ/1DCMSEAZAquaHet.xlsx')
+        # df3 = pd.DataFrame(self.mse_)
+        # df3.to_excel('../Test/Results2/MSEM/1DCMSEMAquaHet.xlsx')
+        # df4 = pd.DataFrame(self.r2_)
+        # df4.to_excel('../Test/Results2/R2M/1DCR2MAquaHet.xlsx')
         # df5 = pd.DataFrame(dist)
         # df5.to_excel('../Test/Results2/DistAquaHet.xlsx')
 

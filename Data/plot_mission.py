@@ -59,7 +59,6 @@ def data(direct):
 
 # name = ['AquaHet-PSO Coupled with GA - R2 Map', 'AquaHet-PSO Coupled with GA - MSE Map', 'AquaHet-PSO Coupled with GA - MSE CAZ', 'AquaHet-PSO Coupled with GA - Error Peaks']
 sensor = [2, 3, 4, 5, 6, 1]
-name = ['R2 Map (4 or more sensors)', 'MSE Map (4 or more sensors)', 'MSE CAZ (4 or more sensors)', 'Error Peaks (4 or more sensors)']
 
 
 dr2 = []
@@ -78,6 +77,9 @@ if method_ and not sensor_:
         derrpeak.append('../Test/Results2/Error/1' + method[i] + 'ErrorAquaHet.xlsx')
         label_ = ['AquaHet-PSO Coupled with GA', 'AquaHet-PSO Coupled without GA', 'AquaHet-PSO Decoupled with GA',
                   'AquaHet-PSO Decoupled without GA', 'Lawnmower']
+        name = ['R2 Score - 4 or more sensors', 'MSE Map - 4 or more sensors', 'MSE CAZ - 4 or more sensors',
+                'Error Peaks - 4 or more sensors']
+
 elif not method_ and sensor_:
     for i in range(len(sensor)):
         label_ = ['2 sensors', '3 sensors', '4 sensors', '5 sensors', '6 sensors', '4 or more sensors']
@@ -85,22 +87,27 @@ elif not method_ and sensor_:
         dmse.append('../Test/Results2/MSEM/' + str(sensor[i]) + 'CCMSEMAquaHet.xlsx')
         dmseca.append('../Test/Results2/MSEAZ/' + str(sensor[i]) + 'CCMSEAZAquaHet.xlsx')
         derrpeak.append('../Test/Results2/Error/' + str(sensor[i]) + 'CCErrorAquaHet.xlsx')
+        name = ['R2 Score - AquaHet-PSO Coupled with GA', 'MSE Map - AquaHet-PSO Coupled with GA', 'MSE CAZ - AquaHet-PSO Coupled with GA',
+                'Error Peaks - AquaHet-PSO Coupled with GA']
 
-
-adr = [dr2, dmse, dmseca, derrpeak]
+adr = [dr2, dmse, derrpeak, dmseca]
+pos_ = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+title = ['a)', 'b)', 'c)', 'd)']
 
 for j in range(len(adr)):
     direct = adr[j]
     fig, ax = plt.subplots()
     ax.set_title(name[j])
-    clrs = sns.color_palette("husl", 6)
+    clrs = sns.color_palette("tab10", 6)
     # with sns.axes_style("darkgrid"):
     for i in range(len(label_)):
         dirc = data(direct[i])
         meanst = np.array(dirc[0], dtype=np.float64)
         sdt = np.array(dirc[1], dtype=np.float64)
-        ax.plot(dirc[2], meanst, label=label_[i])
-        ax.fill_between(dirc[2], meanst - sdt, meanst + sdt, alpha=0.3, facecolor=clrs[i])
+        ax.plot(dirc[2], meanst, label=label_[i], color=clrs[i])
+        # ax.plot(dirc[2], meanst - sdt, linestyle='--', color=clrs[i], alpha=0.3)
+        # ax.plot(dirc[2], meanst + sdt, linestyle='--', color=clrs[i], alpha=0.3)
+        ax.fill_between(dirc[2], meanst - sdt, meanst + sdt, alpha=0.1, facecolor=clrs[i])
         # ax.set_ylim([0, 10^-1])
         ax.set_xlim([10, 200])
         ticks_x = ticker.FuncFormatter(lambda x, pos: format(int(x * 100), ','))

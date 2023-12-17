@@ -60,7 +60,7 @@ initial_position = np.array([[8, 56],
 start_time = time.time()
 
 # PSO initialization
-vehicles = -2
+vehicles = -11
 lwm = LawnmowerEnvironment(ys, resolution, vehicles=vehicles, initial_seed=1000000, initial_position=initial_position,
                            exploration_distance=200, type_error='all_map')
 
@@ -91,3 +91,4 @@ for i in range(50):
     # print('Conf:', conf_total)
 
 lwm.data_out()
+print("Total time:", time.time() - start_time)

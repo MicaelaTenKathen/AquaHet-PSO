@@ -105,11 +105,12 @@ weights = {'1': {'Explore': np.array([2.7460, 3.3385, 0.0732, 3.0006]),
 
 # PSO initialization
 vehicles = -2
+
 stage = 'exploration'
 weights_b = True
 # stage = 'no_exploitation'
 method = 0
-pso = PSOEnvironment(resolution, ys, method, method_pso='decoupled', initial_seed=1000000,
+pso = PSOEnvironment(resolution, ys, method, method_pso='coupled', initial_seed=1000000,
                      initial_position=initial_position, sensor_vehicle=sensors, weights=weights, weights_b=weights_b,
                      vehicles=vehicles, exploration_distance=100, exploitation_distance=200, action=False,
                      reward_function='inc_mse', type_error='all_map', stage=stage, final_model='federated')
@@ -123,7 +124,8 @@ import matplotlib.pyplot as plt
 error_vec = []
 last_error = []
 
-for i in range(50):
+
+for i in range(1):
     print(i)
     time_init = time.time()
     done = False
@@ -137,3 +139,4 @@ for i in range(50):
         done = pso.step(action)
 
 pso.data_out()
+print("Total time:", time.time() - start_time)
